@@ -1,0 +1,319 @@
+<div class="h-full flex flex-col sm:flex-row gap-6 relative flex-1" cdkDropListGroup>
+
+  <!-- SIDEBAR: OFERTAS RECIBIDAS -->
+  <div id="tour-sidebar" class="flex-shrink-0 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 flex flex-col h-full max-h-full transition-all duration-300 ease-in-out"
+       [ngClass]="isSidebarOpen() ? 'w-full sm:w-80' : 'w-full sm:w-16'">
+    <div class="p-3 border-b border-green-200 dark:border-green-800 bg-green-100 dark:bg-green-900/40 rounded-t-xl font-bold text-green-800 dark:text-green-400 flex justify-between items-center cursor-pointer hover:bg-green-200 dark:hover:bg-green-800/60 transition-colors"
+         (click)="toggleSidebar()" title="Ofertas Recibidas">
+      <div class="flex items-center gap-2 overflow-hidden">
+        <span class="text-xl">🎉</span>
+        <span *ngIf="isSidebarOpen()" class="whitespace-nowrap">Ofertas Recibidas</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span *ngIf="isSidebarOpen()" class="bg-green-300 dark:bg-green-700 text-green-900 dark:text-green-100 rounded-full px-2 py-0.5 text-xs">{{ boardData['OFFER'].length }}</span>
+        <button class="p-1 rounded-md transition-transform" [ngClass]="isSidebarOpen() ? 'rotate-0' : 'rotate-180'">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div [ngClass]="{'hidden': !isSidebarOpen()}" class="p-3 flex-1 overflow-y-auto space-y-3 min-h-[150px]"
+         cdkDropList
+         [cdkDropListData]="boardData['OFFER']"
+         (cdkDropListDropped)="drop($event, 'OFFER')">
+
+      <div *ngFor="let app of boardData['OFFER']" cdkDrag class="bg-white dark:bg-slate-800 p-3 shadow-sm rounded-lg border border-green-300 dark:border-green-700 hover:border-green-500 dark:hover:border-green-400 cursor-move transition-colors" (click)="openDetails(app)">
+        <h4 class="font-medium text-sm text-gray-900 dark:text-white">{{ app.offer?.title || 'Unknown Role' }}</h4>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ app.offer?.company || 'Unknown Company' }}</p>
+
+        <div class="mt-3 flex justify-between items-center">
+          <span class="text-xs text-gray-400 dark:text-gray-500">{{ app.updatedAt | date:'shortDate' }}</span>
+          <span class="text-xs font-semibold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded border border-green-200 dark:border-green-800">¡Oferta!</span>
+        </div>
+      </div>
+
+      <div *ngIf="boardData['OFFER'].length === 0" class="text-center py-4 text-green-600/70 dark:text-green-500/50 text-sm border-2 border-dashed border-green-200 dark:border-green-800/50 rounded-lg">
+        Arrastra aquí cuando te hagan una oferta
+      </div>
+    </div>
+  </div>
+
+  <!-- KANBAN BOARD -->
+  <div class="flex-1 flex flex-col h-full min-w-0">
+    <div class="flex justify-between items-center mb-6 flex-shrink-0">
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Mis Postulaciones</h1>
+      <button id="tour-manual-btn" (click)="openManualModal()" class="bg-indigo-600 dark:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-indigo-700 dark:hover:bg-indigo-400 shadow-sm transition-colors">
+        + Agregar Manual
+      </button>
+    </div>
+
+    <div id="tour-board" class="flex gap-4 overflow-x-auto pb-2 flex-1 h-full">
+      <!-- Column -->
+      <div *ngFor="let col of columns" class="flex-shrink-0 w-80 rounded-xl flex flex-col h-full max-h-full border shadow-sm" [ngClass]="col.bgClass + ' ' + col.borderClass">
+        <div class="p-3 border-b rounded-t-xl font-bold flex justify-between items-center" [ngClass]="col.headerClass">
+          <span>{{ col.title }}</span>
+          <span class="rounded-full px-2.5 py-0.5 text-xs shadow-sm" [ngClass]="col.badgeClass">{{ boardData[col.status].length }}</span>
+        </div>
+
+        <div class="p-3 flex-1 overflow-y-auto space-y-3 min-h-[200px]"
+             cdkDropList
+             [cdkDropListData]="boardData[col.status]"
+             (cdkDropListDropped)="drop($event, col.status)">
+
+          <div *ngFor="let app of boardData[col.status]" cdkDrag class="bg-white dark:bg-slate-800 p-3 shadow-sm rounded-lg border border-gray-200 dark:border-slate-600 hover:shadow-md cursor-move transition-all group" [ngClass]="'hover:' + col.borderClass" (click)="openDetails(app)">
+            <h4 class="font-bold text-sm text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{{ app.offer?.title || 'Unknown Role' }}</h4>
+            <p class="text-xs text-gray-600 dark:text-gray-300 mt-1 font-medium">{{ app.offer?.company || 'Unknown Company' }}</p>
+
+            <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1 flex items-center gap-1" *ngIf="app.offer?.location">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              {{ app.offer?.location }}
+            </p>
+
+            <div class="mt-2 pt-2 border-t border-gray-100 dark:border-slate-700 flex justify-between items-center">
+              <span class="text-[10px] font-medium text-gray-500 dark:text-gray-400">{{ app.updatedAt | date:'mediumDate' }}</span>
+              <div class="flex items-center gap-2">
+                <span *ngIf="app.interviewDate" title="Entrevista programada" class="text-amber-500 bg-amber-50 dark:bg-amber-900/30 p-1 rounded-md">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </span>
+                <span class="text-[10px] font-medium px-2 py-0.5 rounded border opacity-0 group-hover:opacity-100 transition-opacity" [ngClass]="col.badgeClass + ' ' + col.borderClass">Abrir</span>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="boardData[col.status].length === 0" class="flex flex-col items-center justify-center py-8 opacity-50">
+            <div class="border-2 border-dashed rounded-lg p-4 text-center" [ngClass]="col.borderClass">
+              <p class="text-xs font-medium" [ngClass]="col.headerClass.split(' ')[2]">Mueve una tarjeta aquí</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Manual App -->
+  <div *ngIf="showManualModal()" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div class="fixed inset-0 bg-gray-500/75 dark:bg-gray-900/80 transition-opacity" aria-hidden="true" (click)="closeManualModal()"></div>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+      <div class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-xl px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6 border border-gray-200 dark:border-slate-700">
+        <div>
+          <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4" id="modal-title">Agregar Postulación Manual</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Cargo / Título</label>
+              <input type="text" [(ngModel)]="manualForm.title" class="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Ej. Frontend Developer">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Empresa</label>
+              <input type="text" [(ngModel)]="manualForm.company" class="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Ej. ACME Corp">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ubicación</label>
+              <input type="text" [(ngModel)]="manualForm.location" class="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Ej. Remoto, Madrid...">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">URL de la Oferta (Opcional)</label>
+              <div class="mt-1 flex gap-2">
+                <input type="url" [(ngModel)]="manualForm.url" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="https://...">
+                <button type="button" (click)="extractDataFromUrl()" [disabled]="!manualForm.url || extractingUrl()" class="inline-flex justify-center items-center rounded-md border border-transparent bg-indigo-100 dark:bg-indigo-900/50 px-4 py-2 text-sm font-medium text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-800 disabled:opacity-50 transition-colors">
+                  <span *ngIf="!extractingUrl()">✨ Extraer</span>
+                  <span *ngIf="extractingUrl()">⏳...</span>
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Estado Actual</label>
+              <select [(ngModel)]="manualForm.status" class="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border">
+                <option *ngFor="let st of statuses" [value]="st.value">{{ st.label }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="mt-5 sm:mt-6 sm:flex sm:flex-row-reverse">
+          <button type="button" (click)="submitManualApp()" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-base font-medium text-white hover:bg-indigo-700 dark:hover:bg-indigo-400 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm transition-colors">
+            Guardar
+          </button>
+          <button type="button" (click)="closeManualModal()" class="mt-3 w-full inline-flex justify-center rounded-xl border border-gray-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm transition-colors">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Detalle y Notas -->
+  <div *ngIf="showDetailsModal() && selectedApp()" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div class="fixed inset-0 bg-gray-500/75 dark:bg-gray-900/80 transition-opacity" aria-hidden="true" (click)="closeDetails()"></div>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+      <div class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-xl px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full sm:p-8 border border-gray-200 dark:border-slate-700">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <!-- Left Column -->
+          <div class="md:col-span-1">
+            <h3 class="text-xl leading-6 font-bold text-gray-900 dark:text-white mb-1" id="modal-title">{{ selectedApp().offer?.title }}</h3>
+            <p class="text-md text-gray-600 dark:text-gray-400 mb-4">{{ selectedApp().offer?.company }} <span *ngIf="selectedApp().offer?.location">&bull; {{ selectedApp().offer?.location }}</span></p>
+
+            <div class="mb-4 p-4 bg-gray-50 dark:bg-slate-700/50 rounded-lg border border-gray-200 dark:border-slate-600">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Estado de Postulación:</span>
+                <select
+                  [value]="selectedApp().status"
+                  (change)="changeStatus(selectedApp().id, $event)"
+                  class="text-xs border-gray-300 dark:border-slate-600 rounded py-1 pl-2 pr-6 bg-white dark:bg-slate-700 dark:text-white font-medium">
+                  <option *ngFor="let status of statuses" [value]="status.value">{{ status.label }}</option>
+                </select>
+              </div>
+              <div *ngIf="selectedApp().offer?.url" class="border-t border-gray-200 dark:border-slate-600 pt-3">
+                <a [href]="selectedApp().offer.url" target="_blank" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 text-sm font-medium flex items-center gap-1">
+                  Abrir enlace original de la oferta
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fecha y Hora de Entrevista (Opcional)</label>
+              <input type="text" [appFlatpickr]="selectedApp().interviewDate" (dateChange)="updateInterviewDate($event)" [value]="selectedApp().interviewDate || ''" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border bg-white cursor-pointer" placeholder="Selecciona una fecha...">
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-gray-200 dark:border-slate-700">
+              <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Contactos / Networking
+              </h4>
+              <div class="space-y-3">
+                <div>
+                  <input type="text" [(ngModel)]="selectedApp().contactName" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Nombre del Reclutador o Entrevistador">
+                </div>
+                <div>
+                  <input type="email" [(ngModel)]="selectedApp().contactEmail" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Correo Electrónico">
+                </div>
+                <div>
+                  <input type="url" [(ngModel)]="selectedApp().contactLinkedin" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="URL del perfil de LinkedIn">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column (Tabs) -->
+          <div class="md:col-span-2 flex flex-col border-t md:border-t-0 md:border-l border-gray-200 dark:border-slate-700 md:pl-8 pt-4 md:pt-0">
+            <!-- Tabs Header -->
+            <div class="flex border-b border-gray-200 dark:border-slate-700 mb-6">
+              <button type="button" (click)="activeTab.set('notes')"
+                [ngClass]="activeTab() === 'notes' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'"
+                class="w-1/2 py-3 text-center border-b-2 font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-colors">
+                📝 Mis Notas
+              </button>
+              <button type="button" (click)="activeTab.set('ai')"
+                [ngClass]="activeTab() === 'ai' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'"
+                class="w-1/2 py-3 text-center border-b-2 font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-colors">
+                ✨ Asistente IA
+              </button>
+            </div>
+
+            <!-- Tab Content: Notes -->
+            <div *ngIf="activeTab() === 'notes'" class="flex-1 flex flex-col">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Añade aquí todo lo relevante sobre esta postulación</label>
+              <textarea [(ngModel)]="selectedApp().notes" rows="15" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-3 px-4 border resize-none flex-1 leading-relaxed" placeholder="• Salario esperado: $2,500 USD&#10;• Entrevista técnica: Repasar estructuras de datos&#10;• Siguiente paso: Me llamarán el jueves..."></textarea>
+            </div>
+
+            <!-- Tab Content: AI Assistant -->
+            <div *ngIf="activeTab() === 'ai'" class="flex-1 flex flex-col space-y-6">
+
+              <!-- Generate Message -->
+              <div class="border border-gray-200 dark:border-slate-700 rounded-xl p-5 bg-gray-50 dark:bg-slate-800">
+                <div class="flex justify-between items-center mb-4">
+                  <label class="block text-sm font-bold text-gray-800 dark:text-gray-200">Mensaje de Introducción (Cover Letter)</label>
+                  <div class="flex gap-2">
+                    <button *ngIf="generatedMessage()" type="button" (click)="translateMessage()" [disabled]="translatingMessage()" class="inline-flex justify-center items-center rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-1.5 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors shadow-sm">
+                      <span *ngIf="!translatingMessage()">🇬🇧 Traducir</span>
+                      <span *ngIf="translatingMessage()">⏳...</span>
+                    </button>
+                    <button type="button" (click)="generateMessage()" [disabled]="generatingMessage()" class="inline-flex justify-center items-center rounded-lg border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-700 px-3 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-800 disabled:opacity-50 transition-colors shadow-sm">
+                      <span *ngIf="!generatingMessage()">✨ Generar Mensaje</span>
+                      <span *ngIf="generatingMessage()">⏳ Generando...</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="relative" *ngIf="generatedMessage()">
+                  <textarea [ngModel]="generatedMessage()" readonly rows="6" class="shadow-sm block w-full sm:text-sm border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-300 rounded-lg py-3 px-4 border pr-10 leading-relaxed"></textarea>
+                  <button type="button" (click)="copyToClipboard()" class="absolute top-1 right-1 p-1 text-gray-400 hover:text-indigo-600 transition-colors" title="Copiar">
+                    <svg *ngIf="!copiedToClipboard()" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    <svg *ngIf="copiedToClipboard()" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Interview Prep -->
+              <div class="border border-gray-200 dark:border-slate-700 rounded-xl p-5 bg-gray-50 dark:bg-slate-800">
+                <div class="flex justify-between items-center mb-4">
+                  <label class="block text-sm font-bold text-gray-800 dark:text-gray-200">Preguntas de Entrevista</label>
+                  <button type="button" (click)="generateInterviewPrep()" [disabled]="generatingInterview()" class="inline-flex justify-center items-center rounded-lg border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-700 px-3 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-800 disabled:opacity-50 transition-colors shadow-sm">
+                    <span *ngIf="!generatingInterview()">💡 Generar Preguntas</span>
+                    <span *ngIf="generatingInterview()">⏳ Analizando...</span>
+                  </button>
+                </div>
+
+                <div *ngIf="interviewPrepResult()" class="space-y-6 mt-4">
+                  <div *ngFor="let qna of interviewPrepResult(); let i = index" class="bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-900/50 p-4 rounded-xl shadow-sm relative">
+                    <p class="text-base font-bold text-indigo-900 dark:text-indigo-300 mb-2 pr-8 leading-snug">Q: {{ qna.question }}</p>
+                    <p class="text-sm text-amber-600 dark:text-amber-400 mb-3 italic pr-8">Consejo: {{ qna.advice }}</p>
+                    <div class="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg text-sm text-gray-700 dark:text-gray-300 border-l-4 border-indigo-400 relative leading-relaxed">
+                      <strong class="block mb-1 text-indigo-800 dark:text-indigo-300">Respuesta ideal:</strong> {{ qna.answer }}
+                    </div>
+                    <button type="button" (click)="copyInterviewAnswer(i, qna.answer)" class="absolute top-3 right-3 p-1.5 text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 bg-white dark:bg-slate-800 rounded-md shadow-sm transition-colors border border-gray-100 dark:border-slate-700" title="Copiar respuesta">
+                      <svg *ngIf="copiedInterviewPrep() !== i" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      <svg *ngIf="copiedInterviewPrep() === i" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div *ngIf="!interviewPrepResult() && !generatingInterview()" class="text-center p-6 border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-xl mt-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Presiona "Generar Preguntas" para simular una entrevista adaptada a tu perfil.</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-gray-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-3">
+          <button type="button" (click)="deleteApplication()" class="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-xl border border-red-200 dark:border-red-800 shadow-sm px-4 py-2 bg-red-50 dark:bg-red-900/20 text-base font-medium text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 focus:outline-none sm:text-sm transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Eliminar Postulación
+          </button>
+
+          <div class="flex flex-col sm:flex-row-reverse gap-3 w-full sm:w-auto">
+            <button type="button" (click)="saveNotes()" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-base font-medium text-white hover:bg-indigo-700 dark:hover:bg-indigo-400 focus:outline-none sm:text-sm transition-colors">
+              Guardar Notas
+            </button>
+            <button type="button" (click)="closeDetails()" class="w-full inline-flex justify-center rounded-xl border border-gray-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none sm:text-sm transition-colors">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

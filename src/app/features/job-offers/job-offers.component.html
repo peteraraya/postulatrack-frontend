@@ -1,0 +1,256 @@
+<div class="flex flex-col md:flex-row gap-6 h-full">
+
+  <!-- Filtros Laterales -->
+  <div class="w-full md:w-72 flex-shrink-0">
+    <div class="bg-white dark:bg-slate-800 p-5 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 sticky top-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Filtros</h2>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre / Título</label>
+          <input type="text" [(ngModel)]="filterService.filters().title" (ngModelChange)="filterService.updateFilters({title: $event})" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Ej. Frontend Developer">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Empresa</label>
+          <input type="text" [(ngModel)]="filterService.filters().company" (ngModelChange)="filterService.updateFilters({company: $event})" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Ej. Google, Amazon...">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">País</label>
+          <input type="text" [(ngModel)]="filterService.filters().country" (ngModelChange)="filterService.updateFilters({country: $event})" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Ej. Chile">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ubicación / Ciudad</label>
+          <input type="text" [(ngModel)]="filterService.filters().location" (ngModelChange)="filterService.updateFilters({location: $event})" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Ej. Santiago">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Habilidades Requeridas</label>
+          <div class="flex flex-wrap items-center gap-2 shadow-sm border border-gray-300 dark:border-slate-600 dark:bg-slate-700 rounded-md py-1.5 px-2 bg-white focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-500 min-h-[42px]">
+            <span *ngFor="let skill of filterService.filters().skills" class="inline-flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-xs font-medium px-2 py-1 rounded-full border border-indigo-200 dark:border-indigo-800">
+              {{ skill }}
+              <button (click)="removeSkill(skill)" class="hover:text-indigo-900 dark:hover:text-indigo-100 focus:outline-none rounded-full focus:ring-1 focus:ring-indigo-500 p-0.5">
+                <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </span>
+            <input type="text" [(ngModel)]="skillInput" (keydown.enter)="addSkill($event)" (keydown.backspace)="removeLastSkill($event)" class="flex-1 min-w-[100px] border-none focus:ring-0 p-0 sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 bg-transparent h-[24px]" placeholder="Ej. Angular, presiona Enter">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Experiencia</label>
+          <select [(ngModel)]="filterService.filters().experience" (ngModelChange)="filterService.updateFilters({experience: $event})" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border bg-white">
+            <option value="">Todas</option>
+            <option value="Junior">Junior</option>
+            <option value="Mid">Mid</option>
+            <option value="Senior">Senior</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Salario Mínimo Deseado</label>
+          <input type="number" [(ngModel)]="filterService.filters().salaryMin" (ngModelChange)="filterService.updateFilters({salaryMin: $event})" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Ej. 1000">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Modalidad de Trabajo</label>
+          <select [(ngModel)]="filterService.filters().workModel" (ngModelChange)="filterService.updateFilters({workModel: $event})" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border bg-white">
+            <option value="">Todas</option>
+            <option value="REMOTE">Remoto</option>
+            <option value="HYBRID">Híbrido</option>
+            <option value="ON_SITE">Presencial</option>
+          </select>
+        </div>
+
+        <div class="pt-2 space-y-3">
+          <button (click)="filterService.applyFilters()" class="w-full bg-indigo-600 dark:bg-indigo-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 dark:hover:bg-indigo-400 shadow-sm transition-colors">
+            Aplicar Filtros
+          </button>
+
+          <button (click)="createJobAlert()" [disabled]="creatingAlert()" class="w-full bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-slate-600 px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-50 dark:hover:bg-slate-600 shadow-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+            <svg *ngIf="!creatingAlert()" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            <span *ngIf="!creatingAlert()">Crear Alerta de Empleo</span>
+            <span *ngIf="creatingAlert()">⏳ Guardando...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resultados de Ofertas -->
+  <div class="flex-1 flex flex-col">
+    <h1 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Explorar Ofertas</h1>
+
+    <!-- Skeleton Loaders -->
+    <div *ngIf="loading()" class="grid grid-cols-1 gap-4 mb-8">
+      <div *ngFor="let i of [1,2,3]" class="bg-white dark:bg-slate-800 p-5 shadow-sm rounded-lg border border-gray-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center animate-pulse">
+        <div class="flex-1 mr-4 w-full">
+          <div class="h-5 bg-gray-200 dark:bg-slate-700 rounded w-1/3 mb-3"></div>
+          <div class="h-3 bg-gray-200 dark:bg-slate-700 rounded w-1/4 mb-4"></div>
+          <div class="flex gap-2 mb-4">
+             <div class="h-4 w-16 bg-green-100 dark:bg-green-900/30 rounded"></div>
+             <div class="h-4 w-16 bg-green-100 dark:bg-green-900/30 rounded"></div>
+          </div>
+          <div class="h-3 bg-gray-200 dark:bg-slate-700 rounded w-full mb-2"></div>
+          <div class="h-3 bg-gray-200 dark:bg-slate-700 rounded w-5/6 mb-4"></div>
+          <div class="flex gap-2">
+             <div class="h-6 w-16 bg-gray-200 dark:bg-slate-700 rounded"></div>
+             <div class="h-6 w-16 bg-gray-200 dark:bg-slate-700 rounded"></div>
+          </div>
+        </div>
+        <div class="flex flex-row sm:flex-col gap-2 mt-4 sm:mt-0 w-full sm:w-32">
+          <div class="h-9 bg-gray-200 dark:bg-slate-700 rounded-md w-full"></div>
+          <div class="h-9 bg-gray-200 dark:bg-slate-700 rounded-md w-full"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-between items-center mb-4">
+      <button (click)="toggleFavoritesFilter()"
+              [ngClass]="showFavoritesOnly ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700'"
+              class="px-4 py-2 border rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
+        <svg [ngClass]="showFavoritesOnly ? 'text-red-500' : 'text-gray-400 dark:text-gray-500'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" [attr.fill]="showFavoritesOnly ? 'currentColor' : 'none'" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+        </svg>
+        {{ showFavoritesOnly ? 'Mostrando Guardadas' : 'Ver Ofertas Guardadas' }}
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4" *ngIf="offers().length > 0 || !loading()">
+      <div *ngFor="let offer of offers()" class="bg-white dark:bg-slate-800 p-5 shadow-sm rounded-lg border border-gray-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center hover:shadow-md dark:hover:shadow-indigo-500/10 transition-all">
+        <div class="flex-1 mr-4 w-full">
+          <div class="flex justify-between items-start">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+              <a [href]="offer.url" target="_blank" class="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline">{{ offer.title }}</a>
+            </h3>
+            <button (click)="toggleFavorite(offer)" class="text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 focus:outline-none transition-colors sm:hidden">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" [ngClass]="offer.isFavorite ? 'text-red-500' : ''" [attr.fill]="offer.isFavorite ? 'currentColor' : 'none'" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
+          </div>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {{ offer.company }} &bull; {{ offer.location || 'Remote' }}
+            <span *ngIf="offer.salaryMin" class="ml-2 text-green-600 dark:text-green-400 font-medium">
+              ({{ offer.salaryMin }} - {{ offer.salaryMax }} {{ offer.currency }})
+            </span>
+          </p>
+
+        <p class="text-[11px] text-orange-500 dark:text-orange-400 font-medium mb-2" *ngIf="offer.applicationsCount">
+          🔥 {{ offer.applicationsCount }} personas ya han postulado a esta oferta
+        </p>
+
+          <div class="mt-2 flex flex-wrap gap-1" *ngIf="offer.perks && offer.perks.length > 0">
+            <span *ngFor="let perk of offer.perks" class="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-[10px] px-1.5 py-0.5 rounded-sm capitalize">{{ perk.replace('_', ' ') }}</span>
+          </div>
+
+          <div class="mt-2 mb-3 text-sm text-gray-600 dark:text-gray-400 line-clamp-3" [innerHTML]="offer.description"></div>
+
+          <div class="mt-2 flex flex-wrap gap-2">
+            <span *ngFor="let skill of offer.skills" class="bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 text-xs px-2 py-1 rounded">{{ skill }}</span>
+          </div>
+
+          <!-- AI Analysis Result -->
+          <div *ngIf="aiAnalysisResult()[offer.id]" class="mt-4 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-md relative">
+            <h4 class="text-xs font-bold text-indigo-800 dark:text-indigo-300 mb-2 flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Análisis ATS (Applicant Tracking System)
+            </h4>
+            <div class="text-xs text-indigo-900 dark:text-indigo-200 pr-8 space-y-2" [innerHTML]="aiAnalysisResult()[offer.id]"></div>
+            <button (click)="copyAnalysis(offer.id, aiAnalysisResult()[offer.id])" class="absolute top-2 right-2 p-1 text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 bg-white dark:bg-slate-800 rounded-md shadow-sm transition-colors" title="Copiar análisis">
+              <svg *ngIf="copiedAnalysis() !== offer.id" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <svg *ngIf="copiedAnalysis() === offer.id" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="flex flex-col sm:flex-col gap-2 mt-4 sm:mt-0 w-full sm:w-auto">
+          <div class="flex items-center justify-between sm:justify-end gap-2 w-full">
+            <button (click)="toggleFavorite(offer)" class="flex items-center justify-center p-2 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full focus:outline-none transition-colors" title="Guardar oferta">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" [ngClass]="offer.isFavorite ? 'text-red-500' : ''" [attr.fill]="offer.isFavorite ? 'currentColor' : 'none'" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            </button>
+          </div>
+          <button *ngIf="!aiAnalysisResult()[offer.id]" (click)="analyzeWithAI(offer)" [disabled]="analyzingOffer() === offer.id" class="w-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 px-4 py-2 rounded-md text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-800 transition-colors flex items-center justify-center gap-1 disabled:opacity-50">
+            <span *ngIf="analyzingOffer() !== offer.id">✨ Analizar Match (IA)</span>
+            <span *ngIf="analyzingOffer() === offer.id">⏳ Analizando...</span>
+          </button>
+          <div class="flex gap-2 w-full mt-1">
+            <a *ngIf="offer.url" [href]="offer.url" target="_blank" class="flex-1 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 text-center px-3 py-2 rounded-md text-xs font-medium hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors">
+              Ver Oferta
+            </a>
+            <button (click)="apply(offer)" class="flex-1 bg-indigo-600 dark:bg-indigo-500 text-white px-3 py-2 rounded-md text-xs font-medium hover:bg-indigo-700 dark:hover:bg-indigo-400 shadow-sm transition-colors">
+              Guardar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="offers().length === 0 && !loading()" class="text-center py-10 bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-600 shadow-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p class="text-gray-500 dark:text-gray-400 font-medium text-lg">No se encontraron ofertas con los filtros actuales.</p>
+      </div>
+
+      <!-- Botón Cargar Más -->
+      <div class="mt-8 flex justify-center" *ngIf="offers().length > 0 && hasMore && !loading()">
+        <button (click)="loadMore()" class="bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm transition-colors flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+          Cargar más ofertas
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Postulación Exitosa -->
+  <div *ngIf="applyingOffer()" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div class="fixed inset-0 bg-gray-500/75 dark:bg-gray-900/80 transition-opacity" aria-hidden="true" (click)="closeApplyModal()"></div>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+      <div class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-xl px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full sm:p-6 border border-gray-200 dark:border-slate-700">
+        <div>
+          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30">
+            <svg class="h-6 w-6 text-green-600 dark:text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div class="mt-3 text-center sm:mt-5">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white" id="modal-title">
+              ¡Guardado en PostulaTrack!
+            </h3>
+            <div class="mt-2">
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                Hemos agregado esta oferta a tu tablero de <strong>Mis Postulaciones</strong>. Para completar tu postulación real, debes ir al sitio de la empresa.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="mt-5 sm:mt-6 sm:flex sm:flex-col gap-3">
+          <button *ngIf="applyingOffer()?.url" type="button" (click)="goToOriginalSite()" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-base font-medium text-white hover:bg-indigo-700 dark:hover:bg-indigo-400 focus:outline-none sm:text-sm transition-colors">
+            Ir al sitio original a postularme &rarr;
+          </button>
+          <button type="button" (click)="closeApplyModal()" class="w-full inline-flex justify-center rounded-xl border border-gray-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none sm:text-sm transition-colors">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
