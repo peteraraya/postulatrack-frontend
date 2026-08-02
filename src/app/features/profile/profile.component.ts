@@ -113,18 +113,26 @@ export class ProfileComponent implements OnInit {
             portfolioUrl: profile.portfolioUrl || ''
           });
           if (profile.cvDocumentUrl) {
-            this.existingDocumentUrl.set(profile.cvDocumentUrl);
+            const fullUrl = this.getFullUrl(profile.cvDocumentUrl);
+            this.existingDocumentUrl.set(fullUrl);
 
-            const isWord = profile.cvDocumentUrl.toLowerCase().includes('.doc') || profile.cvDocumentUrl.toLowerCase().includes('.docx');
+            const isWord = fullUrl.toLowerCase().includes('.doc') || fullUrl.toLowerCase().includes('.docx');
+            const isPdf = fullUrl.toLowerCase().includes('.pdf');
 
-            if (isWord && profile.cvDocumentUrl.startsWith('http')) {
-              // Usar visor de Google Docs solo para Word y si es una URL pública
-              const url = `https://docs.google.com/gview?url=${encodeURIComponent(profile.cvDocumentUrl)}&embedded=true`;
-              this.googleDocsPreviewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
+            // Usar visor de Google Docs para Word y PDF públicos
+            // (evita bloqueos de X-Frame-Options o descargas automáticas en servicios como S3/Cloudinary en producción)
+            if ((isWord || isPdf) && fullUrl.startsWith('http')) {
+              const url = `https://docs.google.com/gview?url=${encodeURIComponent(fullUrl)}&embedded=true`;
+              if (isWord) {
+                this.googleDocsPreviewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
+              } else {
+                this.documentType.set('pdf');
+                this.documentPreviewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
+              }
             } else {
-              // Asumimos que es PDF o un formato que el navegador puede mostrar nativamente
+              // Asumimos que es PDF local o URL relativa y lo mostramos nativamente
               this.documentType.set('pdf');
-              this.documentPreviewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(profile.cvDocumentUrl));
+              this.documentPreviewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(fullUrl));
             }
           }
           this.suggestSkills();
@@ -190,6 +198,24 @@ export class ProfileComponent implements OnInit {
     this.selectedDocument.set(null);
     this.documentPreviewUrl.set(null);
     this.documentType.set(null);
+  }
+
+  private getFullUrl(url: string): string {
+    if (!url) return '';
+    let finalUrl = url;
+
+    // Si la URL es relativa, le anteponemos el host del API
+    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('blob:')) {
+      const baseUrl = environment.apiUrl.replace(/\/api$/, '');
+      finalUrl = url.startsWith('/') ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
+    }
+
+    // Forzar HTTPS en producción para evitar bloqueos por Mixed Content
+    if (window.location.protocol === 'https:' && finalUrl.startsWith('http://')) {
+      finalUrl = finalUrl.replace('http://', 'https://');
+    }
+
+    return finalUrl;
   }
 
   saveProfile() {
