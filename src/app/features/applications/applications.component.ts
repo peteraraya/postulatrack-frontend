@@ -165,9 +165,7 @@ export class ApplicationsComponent implements OnInit {
           ],
           onDestroyStarted: () => {
             localStorage.setItem('postulatrack_tour_seen', 'true');
-            if (driverObj.hasNextStep() || driverObj.isFirstStep()) {
-              driverObj.destroy();
-            }
+            driverObj.destroy();
           }
         });
         driverObj.drive();
