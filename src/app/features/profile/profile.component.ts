@@ -119,18 +119,19 @@ export class ProfileComponent implements OnInit {
             const isWord = fullUrl.toLowerCase().includes('.doc') || fullUrl.toLowerCase().includes('.docx');
             const isPdf = fullUrl.toLowerCase().includes('.pdf');
 
-            // Usar visor de Google Docs para Word y PDF públicos
-            // (evita bloqueos de X-Frame-Options o descargas automáticas en servicios como S3/Cloudinary en producción)
-            if ((isWord || isPdf) && fullUrl.startsWith('http')) {
+            if (isWord && fullUrl.startsWith('http')) {
+              // Visor de Google Docs solo para Word (ya que los navegadores no los leen nativamente)
               const url = `https://docs.google.com/gview?url=${encodeURIComponent(fullUrl)}&embedded=true`;
-              if (isWord) {
-                this.googleDocsPreviewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
-              } else {
-                this.documentType.set('pdf');
-                this.documentPreviewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
-              }
+              this.documentType.set('word');
+              this.googleDocsPreviewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
+            } else if (!isWord && !isPdf && fullUrl.includes('cloudinary.com') && fullUrl.includes('/raw/')) {
+              // Salvaguarda: Si el link es de Cloudinary 'raw' pero no tiene la extensión .pdf en la URL,
+              // el servidor fuerza la descarga (Content-Disposition: attachment).
+              // No lo ponemos en el iframe para evitar la descarga automática en bucle.
+              this.documentType.set(null);
             } else {
-              // Asumimos que es PDF local o URL relativa y lo mostramos nativamente
+              // Si es PDF, usamos el visor nativo del navegador (mucho más rápido y nítido).
+              // Cloudinary renderiza PDFs nativamente si se suben con resource_type: 'image'.
               this.documentType.set('pdf');
               this.documentPreviewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(fullUrl));
             }
