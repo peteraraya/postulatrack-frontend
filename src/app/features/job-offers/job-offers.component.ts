@@ -65,6 +65,24 @@ export class JobOffersComponent implements OnInit {
           newData = newData.filter((o: any) => o.isFavorite);
         }
 
+        // Filtro local de experiencia (ya que el servicio no trae ese dato)
+        const expFilter = this.filterService.filters().experience;
+        if (expFilter) {
+          const expLow = expFilter.toLowerCase();
+          newData = newData.filter((o: any) => {
+            const t = o.title?.toLowerCase() || '';
+            const d = o.description?.toLowerCase() || '';
+            if (expLow === 'junior') {
+              return t.includes('junior') || t.includes('jr') || d.includes('junior') || d.includes('jr');
+            } else if (expLow === 'senior') {
+              return t.includes('senior') || t.includes('sr') || d.includes('senior') || d.includes('sr');
+            } else if (expLow === 'mid') {
+              return t.includes('mid') || t.includes('semi') || d.includes('mid') || d.includes('semi');
+            }
+            return true;
+          });
+        }
+
         this.hasMore = newData.length >= 10;
 
         if (reset) {
@@ -78,9 +96,34 @@ export class JobOffersComponent implements OnInit {
         // Mock data
         const savedFavs = JSON.parse(localStorage.getItem('mock_favs') || '[]');
         let mocks = [
-          { id: '1', title: 'Frontend Developer', company: 'Google', isRemote: true, skills: ['Angular', 'TypeScript'], isFavorite: savedFavs.includes('1') },
-          { id: '2', title: 'Backend Engineer', company: 'Amazon', location: 'Santiago', skills: ['NestJS', 'Node.js'], isFavorite: savedFavs.includes('2') }
+          { id: '1', title: 'Frontend Developer', company: 'Google', location: 'Remote', isRemote: true, skills: ['Angular', 'TypeScript'], isFavorite: savedFavs.includes('1'), seniority: 'JUNIOR', workModel: 'REMOTE' },
+          { id: '2', title: 'Backend Engineer', company: 'Amazon', location: 'Santiago', isRemote: false, skills: ['NestJS', 'Node.js'], isFavorite: savedFavs.includes('2'), seniority: 'MID', workModel: 'HYBRID' }
         ];
+
+        // Local filtering for mock data
+        const filters = this.filterService.filters();
+        if (filters.title) mocks = mocks.filter(m => m.title.toLowerCase().includes(filters.title.toLowerCase()));
+        if (filters.company) mocks = mocks.filter(m => m.company.toLowerCase().includes(filters.company.toLowerCase()));
+        if (filters.location) mocks = mocks.filter(m => m.location?.toLowerCase().includes(filters.location.toLowerCase()));
+        if (filters.experience) {
+          const expLow = filters.experience.toLowerCase();
+          mocks = mocks.filter((o: any) => {
+            const t = o.title?.toLowerCase() || '';
+            const d = o.description?.toLowerCase() || '';
+            if (expLow === 'junior') {
+              return t.includes('junior') || t.includes('jr') || d.includes('junior') || d.includes('jr');
+            } else if (expLow === 'senior') {
+              return t.includes('senior') || t.includes('sr') || d.includes('senior') || d.includes('sr');
+            } else if (expLow === 'mid') {
+              return t.includes('mid') || t.includes('semi') || d.includes('mid') || d.includes('semi');
+            }
+            return true;
+          });
+        }
+        if (filters.workModel) mocks = mocks.filter(m => m.workModel === filters.workModel);
+        if (filters.skills && filters.skills.length > 0) {
+          mocks = mocks.filter(m => filters.skills.every(s => m.skills.some(ms => ms.toLowerCase() === s.toLowerCase())));
+        }
 
         if (this.showFavoritesOnly) {
           mocks = mocks.filter(m => m.isFavorite);

@@ -106,7 +106,7 @@ export class ProfileComponent implements OnInit {
           }
           this.profileForm.patchValue({
             headline: profile.headline || '',
-            experience: profile.experience || '',
+            experience: profile.experience ? profile.experience.toUpperCase() : '',
             summary: profile.summary || '',
             skills: profile.skills || [],
             location: profile.location || '',

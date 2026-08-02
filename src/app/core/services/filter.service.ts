@@ -76,7 +76,9 @@ export class FilterService {
     if (current.company) params.append('company', current.company);
     if (current.location) params.append('location', current.location);
     if (current.country) params.append('country', current.country);
-    if (current.experience) params.append('experience', current.experience);
+    // Filtramos la experiencia localmente en el componente porque el backend podría no tener este dato mapeado
+    // if (current.experience) params.append('experience', current.experience);
+
     if (current.salaryMin) params.append('salaryMin', current.salaryMin.toString());
     if (current.workModel) params.append('workModel', current.workModel);
     if (current.skills && current.skills.length > 0) {
