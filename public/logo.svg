@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5"/>
+      <stop offset="100%" stop-color="#0EA5E9"/>
+    </linearGradient>
+    <linearGradient id="markGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E0F2FE"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Modern Squircle Background -->
+  <rect x="24" y="24" width="208" height="208" rx="56" fill="url(#bgGrad)"/>
+
+  <!-- Stylized modern 'P' combined with a magnifying/tracking element -->
+  <path d="M104 80 H 144 C 166.091 80 184 97.909 184 120 C 184 142.091 166.091 160 144 160 H 120 V 176 C 120 180.418 116.418 184 112 184 C 107.582 184 104 180.418 104 176 V 80 Z" fill="url(#markGrad)"/>
+
+  <!-- Inner counter of the 'P' -->
+  <circle cx="144" cy="120" r="16" fill="url(#bgGrad)"/>
+
+  <!-- Upward Trend / Track accent -->
+  <path d="M156 108 L 172 92 L 184 104" fill="none" stroke="url(#markGrad)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
