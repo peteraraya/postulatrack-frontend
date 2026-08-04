@@ -13,6 +13,7 @@ export const routes: Routes = [
       { path: 'interview-prep', loadComponent: () => import('./features/interview-prep/interview-prep.component').then(m => m.InterviewPrepComponent) },
       { path: 'applications', loadComponent: () => import('./features/applications/applications.component').then(m => m.ApplicationsComponent) },
       { path: 'job-offers', loadComponent: () => import('./features/job-offers/job-offers.component').then(m => m.JobOffersComponent) },
+      { path: 'analyzer', loadComponent: () => import('./features/analyzer/analyzer.component').then(m => m.AnalyzerComponent) },
     ]
   },
   {

@@ -1,5 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
+@import "flatpickr/dist/flatpickr.min.css";
+@import "flatpickr/dist/themes/airbnb.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,7 +16,7 @@
   --app-text: #0f172a;
   --app-muted: #475569;
   --app-accent: #4f46e5;
-  --app-accent-2: #7c3aed;
+  --app-accent-2: #0ea5e9;
 }
 
 .dark {
@@ -25,7 +28,7 @@
   --app-text: #e2e8f0;
   --app-muted: #94a3b8;
   --app-accent: #818cf8;
-  --app-accent-2: #c084fc;
+  --app-accent-2: #38bdf8;
 }
 
 body {
@@ -37,7 +40,7 @@ html, body {
   @apply h-full w-full m-0;
   background:
     radial-gradient(circle at top left, rgba(99, 102, 241, 0.15), transparent 32%),
-    radial-gradient(circle at top right, rgba(168, 85, 247, 0.12), transparent 26%),
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 26%),
     var(--app-bg);
   color: var(--app-text);
 }
@@ -85,7 +88,7 @@ html, body {
   inset: 0;
   background:
     radial-gradient(circle at top left, rgba(99, 102, 241, 0.12), transparent 38%),
-    radial-gradient(circle at bottom right, rgba(168, 85, 247, 0.10), transparent 32%);
+    radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.10), transparent 32%);
   pointer-events: none;
   z-index: -1;
 }
@@ -174,5 +177,107 @@ textarea:focus,
 select:focus {
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
   border-color: rgba(99, 102, 241, 0.8);
+}
+
+/* Kanban Drag and Drop Animations */
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 0.5rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  transform: rotate(3deg) scale(1.02);
+  cursor: grabbing !important;
+  opacity: 0.95;
+  background-color: var(--app-card) !important;
+  border: 1px solid var(--app-accent) !important;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.2;
+  border: 2px dashed #94a3b8;
+  background-color: transparent !important;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cdk-drop-list-dragging .cdk-drag {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Flatpickr Dark Mode Overrides */
+.dark .flatpickr-calendar {
+  background: rgba(15, 23, 42, 0.95) !important;
+  box-shadow: 0 14px 34px -22px rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid var(--app-border) !important;
+}
+
+.dark .flatpickr-calendar::before,
+.dark .flatpickr-calendar::after {
+  display: none !important;
+}
+
+.dark .flatpickr-month,
+.dark .flatpickr-current-month,
+.dark .flatpickr-weekday,
+.dark span.flatpickr-weekday,
+.dark .flatpickr-current-month input.cur-year {
+  color: #e2e8f0 !important;
+  fill: #e2e8f0 !important;
+  background: transparent !important;
+}
+
+.dark .flatpickr-day {
+  color: #cbd5e1 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.dark .flatpickr-day:hover,
+.dark .flatpickr-day:focus {
+  background: rgba(71, 85, 105, 0.5) !important;
+  border-color: rgba(71, 85, 105, 0.5) !important;
+}
+
+.dark .flatpickr-day.today {
+  border-color: rgba(99, 102, 241, 0.5) !important;
+}
+
+.dark .flatpickr-day.selected,
+.dark .flatpickr-day.startRange,
+.dark .flatpickr-day.endRange {
+  background: #4f46e5 !important;
+  color: #fff !important;
+  border-color: #4f46e5 !important;
+}
+
+.dark .flatpickr-day.flatpickr-disabled,
+.dark .flatpickr-day.prevMonthDay,
+.dark .flatpickr-day.nextMonthDay,
+.dark .flatpickr-day.notAllowed,
+.dark .flatpickr-day.notAllowed.prevMonthDay,
+.dark .flatpickr-day.notAllowed.nextMonthDay {
+  color: #475569 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.dark .flatpickr-time {
+  border-top-color: var(--app-border) !important;
+}
+
+.dark .flatpickr-time input {
+  color: #e2e8f0 !important;
+}
+
+.dark .flatpickr-time .flatpickr-time-separator {
+  color: #e2e8f0 !important;
+}
+
+.dark .flatpickr-time input:hover,
+.dark .flatpickr-time .flatpickr-am-pm:hover,
+.dark .flatpickr-time input:focus,
+.dark .flatpickr-time .flatpickr-am-pm:focus {
+  background: rgba(71, 85, 105, 0.5) !important;
 }
 

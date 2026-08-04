@@ -1,45 +1,198 @@
 <div class="max-w-3xl mx-auto">
   <h1 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Mi Perfil</h1>
 
-  <!-- Información de Google -->
-  <div class="bg-white dark:bg-slate-800 shadow rounded-lg p-6 mb-6 flex items-center space-x-4 border border-gray-100 dark:border-slate-700">
-    <img *ngIf="userInfo?.picture || userInfo?.avatarUrl" [src]="userInfo?.picture || userInfo?.avatarUrl" alt="Foto de perfil" class="w-16 h-16 rounded-full shadow-sm border border-gray-200 dark:border-slate-700">
-    <div class="w-16 h-16 rounded-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-gray-500 dark:text-gray-400 text-xl font-bold border border-gray-300 dark:border-slate-600" *ngIf="!userInfo?.picture && !userInfo?.avatarUrl">
-      {{ userInfo?.name?.charAt(0) || userInfo?.email?.charAt(0) || 'U' }}
+  <!-- Información de Usuario e Indicador de Completitud -->
+  <div class="bg-white dark:bg-slate-800 shadow rounded-xl p-6 mb-6 border border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+    <div class="flex items-center space-x-4">
+      <img *ngIf="userInfo?.picture || userInfo?.avatarUrl" [src]="userInfo?.picture || userInfo?.avatarUrl" alt="Foto de perfil" class="w-16 h-16 rounded-full shadow-sm border border-gray-200 dark:border-slate-700">
+      <div class="w-16 h-16 rounded-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-gray-500 dark:text-gray-400 text-xl font-bold border border-gray-300 dark:border-slate-600" *ngIf="!userInfo?.picture && !userInfo?.avatarUrl">
+        {{ userInfo?.name?.charAt(0) || userInfo?.email?.charAt(0) || 'U' }}
+      </div>
+      <div>
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ userInfo?.name || 'Usuario' }}</h2>
+        <p class="text-gray-500 dark:text-gray-400 text-sm">{{ userInfo?.email }}</p>
+      </div>
     </div>
-    <div>
-      <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ userInfo?.name || 'Usuario' }}</h2>
-      <p class="text-gray-500 dark:text-gray-400 text-sm">{{ userInfo?.email }}</p>
+
+    <div class="w-full sm:w-64 bg-gray-50 dark:bg-slate-900 p-4 rounded-lg border border-gray-200 dark:border-slate-700 shadow-inner">
+      <div class="flex justify-between items-center mb-1">
+        <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Salud del Perfil</span>
+        <span class="text-xs font-extrabold" [ngClass]="{'text-red-500': profileCompleteness < 50, 'text-yellow-500': profileCompleteness >= 50 && profileCompleteness < 100, 'text-green-500': profileCompleteness === 100}">{{ profileCompleteness }}%</span>
+      </div>
+      <div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2 mb-2 overflow-hidden">
+        <div class="h-2 rounded-full transition-all duration-1000 ease-out" [ngClass]="{'bg-red-500': profileCompleteness < 50, 'bg-yellow-400': profileCompleteness >= 50 && profileCompleteness < 100, 'bg-green-500': profileCompleteness === 100}" [style.width.%]="profileCompleteness"></div>
+      </div>
+      <p class="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
+        <span *ngIf="profileCompleteness < 50">Completa tu perfil para que la IA mejore tus recomendaciones.</span>
+        <span *ngIf="profileCompleteness >= 50 && profileCompleteness < 100">¡Casi listo! Añade tu CV o portafolio para llegar al 100%.</span>
+        <span *ngIf="profileCompleteness === 100">¡Excelente! Tu perfil está optimizado para la IA.</span>
+      </p>
     </div>
   </div>
 
   <div class="bg-white dark:bg-slate-800 shadow rounded-lg p-6 border border-gray-100 dark:border-slate-700">
     <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
       <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
-        <div class="sm:col-span-1">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Titular Profesional</label>
-          <div class="mt-1">
-            <input type="text" formControlName="headline" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Ej. Desarrollador Frontend" />
+
+        <!-- Nombres y Contacto -->
+        <div class="sm:col-span-2 border-b border-gray-200 dark:border-slate-700 pb-4 mb-2">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Información Personal</h3>
+          <div class="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-2">
+            <div class="sm:col-span-1">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombres</label>
+              <div class="mt-1">
+                <input type="text" formControlName="firstName" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Tus nombres" />
+              </div>
+            </div>
+            <div class="sm:col-span-1">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Apellidos</label>
+              <div class="mt-1">
+                <input type="text" formControlName="lastName" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Tus apellidos" />
+              </div>
+            </div>
+            <div class="sm:col-span-1">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Correo Electrónico</label>
+              <div class="mt-1">
+                <input type="email" formControlName="email" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="tu@correo.com" />
+              </div>
+            </div>
+            <div class="sm:col-span-1">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Teléfono</label>
+              <div class="mt-1">
+                <input type="tel" formControlName="phone" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="+56 9 1234 5678" />
+              </div>
+            </div>
+            <div class="sm:col-span-1">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ciudad / País</label>
+              <div class="mt-1">
+                <input type="text" formControlName="location" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Ej. Santiago, Chile" />
+              </div>
+            </div>
+            <div class="sm:col-span-1">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Disponibilidad</label>
+              <div class="mt-1">
+                <select formControlName="availability" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border bg-white cursor-pointer">
+                  <option value="">Selecciona disponibilidad</option>
+                  <option value="Inmediata">Inmediata</option>
+                  <option value="15_dias">15 días</option>
+                  <option value="1_mes">1 mes</option>
+                  <option value="Escuchando_ofertas">Escuchando ofertas</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="sm:col-span-1">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nivel de Experiencia</label>
-          <div class="mt-1">
-            <select formControlName="experience" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border bg-white cursor-pointer">
-              <option value="">Selecciona tu experiencia</option>
-              <option value="Junior">Junior (0-2 años)</option>
-              <option value="Mid">Mid-Level (2-5 años)</option>
-              <option value="Senior">Senior (5+ años)</option>
-              <option value="Lead">Lead / Manager</option>
-            </select>
+        <div class="sm:col-span-2 border-b border-gray-200 dark:border-slate-700 pb-4 mb-2">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Perfil Profesional</h3>
+          <div class="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-2">
+            <div class="sm:col-span-1">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Titular Profesional</label>
+              <div class="mt-1">
+                <input type="text" formControlName="headline" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Ej. Desarrollador Frontend" />
+              </div>
+            </div>
+
+            <div class="sm:col-span-1">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nivel de Experiencia</label>
+              <div class="mt-1">
+                <select formControlName="experienceLevel" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border bg-white cursor-pointer">
+                  <option value="">Selecciona tu experiencia</option>
+                  <option value="Junior">Junior (0-2 años)</option>
+                  <option value="Mid">Mid-Level (2-5 años)</option>
+                  <option value="Senior">Senior (5+ años)</option>
+                  <option value="Lead">Lead / Manager</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="sm:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Resumen</label>
+              <div class="mt-1">
+                <textarea formControlName="summary" rows="4" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Un breve resumen de tu perfil profesional..."></textarea>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="sm:col-span-2">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Resumen</label>
-          <div class="mt-1">
-            <textarea formControlName="summary" rows="4" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border"></textarea>
+        <!-- Enlaces -->
+        <div class="sm:col-span-2 border-b border-gray-200 dark:border-slate-700 pb-4 mb-2">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Enlaces y Redes</h3>
+          <div class="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-2">
+            <div class="sm:col-span-1">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">URL de LinkedIn</label>
+              <div class="mt-1 flex gap-2">
+                <input type="url" formControlName="linkedinUrl" class="flex-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="https://linkedin.com/in/..." />
+                <a *ngIf="profileForm.get('linkedinUrl')?.value" [href]="profileForm.get('linkedinUrl')?.value" target="_blank" class="inline-flex items-center justify-center px-3 border border-gray-300 dark:border-slate-600 rounded-md bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors shadow-sm" title="Abrir enlace">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+            <div class="sm:col-span-1">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">URL de GitHub</label>
+              <div class="mt-1 flex gap-2">
+                <input type="url" formControlName="githubUrl" class="flex-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="https://github.com/..." />
+                <a *ngIf="profileForm.get('githubUrl')?.value" [href]="profileForm.get('githubUrl')?.value" target="_blank" class="inline-flex items-center justify-center px-3 border border-gray-300 dark:border-slate-600 rounded-md bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors shadow-sm" title="Abrir enlace">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">URL de Portafolio Web</label>
+              <div class="mt-1 flex gap-2">
+                <input type="url" formControlName="portfolioUrl" class="flex-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="https://mi-portafolio.com" />
+                <a *ngIf="profileForm.get('portfolioUrl')?.value" [href]="profileForm.get('portfolioUrl')?.value" target="_blank" class="inline-flex items-center justify-center px-3 border border-gray-300 dark:border-slate-600 rounded-md bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors shadow-sm" title="Abrir enlace">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Experiencia Laboral Dinámica -->
+        <div class="sm:col-span-2 border-b border-gray-200 dark:border-slate-700 pb-4 mb-2">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Experiencia Laboral</h3>
+            <button type="button" (click)="addWorkExperience()" class="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/60 px-3 py-1.5 rounded text-sm font-medium transition-colors">
+              + Añadir Experiencia
+            </button>
+          </div>
+
+          <div formArrayName="workExperiences" class="space-y-4">
+            <div *ngFor="let exp of workExperiences.controls; let i=index" [formGroupName]="i" class="p-4 bg-gray-50 dark:bg-slate-900/50 rounded-lg border border-gray-200 dark:border-slate-700 relative">
+              <button *ngIf="workExperiences.controls.length > 1" type="button" (click)="removeWorkExperience(i)" class="absolute top-2 right-2 text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-md p-1 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              </button>
+
+              <div class="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-2">
+                <div class="sm:col-span-1">
+                  <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">Empresa</label>
+                  <input type="text" formControlName="company" class="mt-1 shadow-sm block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-1.5 px-3 border" placeholder="Nombre de empresa" />
+                </div>
+                <div class="sm:col-span-1">
+                  <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">Cargo</label>
+                  <input type="text" formControlName="role" class="mt-1 shadow-sm block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-1.5 px-3 border" placeholder="Ej. Frontend Developer" />
+                </div>
+                <div class="sm:col-span-1">
+                  <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">Fecha Inicio</label>
+                  <input type="text" formControlName="startDate" appFlatpickr [flatpickrOptions]="{ dateFormat: 'Y-m', altFormat: 'F, Y' }" class="mt-1 shadow-sm block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-1.5 px-3 border cursor-pointer" placeholder="Seleccionar mes" />
+                </div>
+                <div class="sm:col-span-1">
+                  <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">Fecha Fin</label>
+                  <input type="text" formControlName="endDate" appFlatpickr [flatpickrOptions]="{ dateFormat: 'Y-m', altFormat: 'F, Y' }" class="mt-1 shadow-sm block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-1.5 px-3 border cursor-pointer" placeholder="Seleccionar mes (o dejar en blanco)" />
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">Descripción (Logros/Responsabilidades)</label>
+                  <textarea formControlName="description" rows="2" class="mt-1 shadow-sm block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-1.5 px-3 border"></textarea>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -64,23 +217,23 @@
           </div>
         </div>
 
-        <div class="sm:col-span-2">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ubicación</label>
+        <div class="sm:col-span-1">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Idiomas</label>
           <div class="mt-1">
-            <input type="text" formControlName="location" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" />
+            <input type="text" formControlName="languages" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Ej. Español (Nativo), Inglés (C1)" />
           </div>
         </div>
 
-        <div class="sm:col-span-2">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">URL de Portafolio</label>
+        <div class="sm:col-span-1">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Hobbies / Intereses</label>
           <div class="mt-1">
-            <input type="url" formControlName="portfolioUrl" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="https://mi-portafolio.com" />
+            <input type="text" formControlName="hobbies" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Ej. Fotografía, Open Source, Ciclismo" />
           </div>
         </div>
 
         <div class="sm:col-span-2">
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Adjuntar CV (PDF o Word)</label>
-          <div class="mt-1">
+          <div class="mt-1 relative">
             <div
               class="w-full flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg transition-colors cursor-pointer"
               [ngClass]="isDragging() ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-700/30 hover:bg-gray-100 dark:hover:bg-slate-700/50'"
@@ -89,13 +242,27 @@
               (drop)="onDrop($event)"
               (click)="fileInput.click()">
 
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg *ngIf="!selectedDocument()" xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
-              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Haz clic para buscar o arrastra tu CV aquí</p>
+              <svg *ngIf="selectedDocument()" xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-indigo-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+
+              <p *ngIf="!selectedDocument()" class="text-sm font-medium text-gray-700 dark:text-gray-300">Haz clic para buscar o arrastra tu CV aquí</p>
+              <p *ngIf="selectedDocument()" class="text-sm font-bold text-indigo-600 dark:text-indigo-400">Archivo listo: {{ selectedDocument()?.name }}</p>
+
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Soporta archivos PDF, DOC o DOCX (Máx. 5MB)</p>
 
               <input #fileInput type="file" class="hidden" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" (change)="onDocumentSelected($event)">
+            </div>
+
+            <!-- Botón Mágico de IA -->
+            <div *ngIf="selectedDocument()" class="absolute top-2 right-2 flex gap-2">
+              <button type="button" (click)="extractDataFromCV(); $event.stopPropagation()" [disabled]="isExtractingCV()" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-indigo-500 to-sky-500 hover:from-indigo-600 hover:to-sky-600 text-white text-xs font-bold rounded-md shadow-md transition-all hover:scale-105 focus:outline-none disabled:opacity-50">
+                <span *ngIf="!isExtractingCV()">✨ Extraer datos con IA</span>
+                <span *ngIf="isExtractingCV()">⏳ Extrayendo...</span>
+              </button>
             </div>
           </div>
         </div>
@@ -104,12 +271,11 @@
         <div class="sm:col-span-2" *ngIf="documentPreviewUrl() || existingDocumentUrl() || documentType() === 'word'">
           <div class="flex justify-between items-center mb-2">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Vista previa del documento</label>
-            <a *ngIf="!selectedDocument() && existingDocumentUrl()" [href]="existingDocumentUrl()" target="_blank" download class="inline-flex items-center gap-1 text-xs font-medium bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-600 px-3 py-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-slate-600 shadow-sm transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Descargar CV Original
-            </a>
+            <div class="flex gap-2">
+              <a *ngIf="!selectedDocument() && existingDocumentUrl()" [href]="existingDocumentUrl()" target="_blank" download class="inline-flex items-center gap-1 text-xs font-medium bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-600 px-3 py-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-slate-600 shadow-sm transition-colors">
+                Descargar CV Original
+              </a>
+            </div>
           </div>
           <div class="border border-gray-300 dark:border-slate-600 rounded-md bg-gray-50 dark:bg-slate-800 overflow-hidden relative" [ngClass]="{'p-4': documentType() === 'word' || (!documentPreviewUrl() && !googleDocsPreviewUrl())}">
 
@@ -143,9 +309,15 @@
 
       </div>
 
-      <div class="mt-8 pt-4 border-t border-gray-200 dark:border-slate-700 flex justify-end">
-        <button type="submit" [disabled]="profileForm.invalid || loading()" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors">
-          {{ loading() ? 'Guardando...' : 'Guardar Perfil' }}
+      <div class="mt-8 pt-6 border-t border-gray-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <button type="button" (click)="generateMyCV()" class="w-full sm:w-auto inline-flex justify-center items-center gap-2 py-2 px-4 border border-indigo-200 dark:border-indigo-700 shadow-sm text-sm font-bold rounded-md text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-slate-800 hover:bg-indigo-100 dark:hover:bg-slate-700 focus:outline-none transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Descargar CV Propio
+        </button>
+        <button type="submit" [disabled]="profileForm.invalid || loading()" class="w-full sm:w-auto inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-bold rounded-md text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors">
+          {{ loading() ? 'Guardando...' : 'Guardar Cambios' }}
         </button>
       </div>
     </form>

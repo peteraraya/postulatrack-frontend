@@ -189,21 +189,44 @@ export class JobOffersComponent implements OnInit {
         this.analyzingOffer.set(null);
       },
       error: () => {
-        // Mock result
-        setTimeout(() => {
-          const mockHTML = `
-            <p class="mb-2">Basado en tu perfil, tienes un excelente match (85%) con esta oferta porque compartes la experiencia en <strong class="text-indigo-700 dark:text-indigo-400">Angular y TypeScript</strong>.</p>
-            <p class="font-semibold text-gray-800 dark:text-gray-200 mt-2 mb-1">Palabras clave faltantes en tu CV (ATS):</p>
-            <div class="flex flex-wrap gap-1">
-              <span class="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-1.5 py-0.5 rounded text-[10px] border border-red-200 dark:border-red-800">RxJS</span>
-              <span class="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-1.5 py-0.5 rounded text-[10px] border border-red-200 dark:border-red-800">Jest</span>
-              <span class="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-1.5 py-0.5 rounded text-[10px] border border-red-200 dark:border-red-800">CI/CD</span>
-            </div>
-            <p class="mt-2 italic text-gray-600 dark:text-gray-400 text-[10px]">Añade estas palabras a tu perfil para pasar los filtros automáticos.</p>
-          `;
-          this.aiAnalysisResult.update(prev => ({ ...prev, [offer.id]: mockHTML }));
+        if (!environment.geminiApiKey) {
+          this.toastService.error('Falta configurar Gemini API Key en environment.ts');
           this.analyzingOffer.set(null);
-        }, 1500);
+          return;
+        }
+
+        const offerTitle = offer.title || 'Trabajo';
+        const offerCompany = offer.company || 'Empresa';
+
+        this.http.get<any>(`${environment.apiUrl}/profile`).subscribe({
+          next: (profile) => {
+            const userSkills = profile?.skills ? profile.skills.join(', ') : 'Habilidades generales';
+            const userHeadline = profile?.headline || 'Profesional';
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
+            const payload = {
+              contents: [{
+                parts: [{ text: `Actúa como un reclutador experto. El candidato tiene este titular: "${userHeadline}" y estas habilidades: "${userSkills}". La oferta es para el puesto de "${offerTitle}" en la empresa "${offerCompany}". Escribe un párrafo muy breve y directo (máximo 3 líneas) indicando por qué hace buen match y qué 1 concepto clave debería estudiar o repasar para la entrevista. No uses formato markdown de bloques.` }]
+              }]
+            };
+
+            this.http.post<any>(url, payload).subscribe({
+              next: (res) => {
+                const analysis = res.candidates[0].content.parts[0].text;
+                this.aiAnalysisResult.update(prev => ({ ...prev, [offer.id]: analysis }));
+                this.analyzingOffer.set(null);
+              },
+              error: (err) => {
+                console.error('Error con Gemini API:', err);
+                this.toastService.error('Error al analizar con IA.');
+                this.analyzingOffer.set(null);
+              }
+            });
+          },
+          error: () => {
+            this.analyzingOffer.set(null);
+          }
+        });
       }
     });
   }
