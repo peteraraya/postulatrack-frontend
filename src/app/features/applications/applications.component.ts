@@ -4,39 +4,9 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { FormsModule } from '@angular/forms';
 import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
-import { Directive, ElementRef, OnDestroy, Input, Output, EventEmitter, AfterViewInit } from '@angular/core';
-import flatpickr from 'flatpickr';
 import { driver } from 'driver.js';
 import { ToastService } from '../../core/services/toast.service';
-
-@Directive({
-  selector: '[appFlatpickr]',
-  standalone: true
-})
-export class FlatpickrDirective implements AfterViewInit, OnDestroy {
-  @Input() appFlatpickr: any;
-  @Output() dateChange = new EventEmitter<string>();
-  private fp: any;
-
-  constructor(private el: ElementRef) {}
-
-  ngAfterViewInit() {
-    this.fp = flatpickr(this.el.nativeElement, {
-      enableTime: true,
-      dateFormat: "Y-m-d\\TH:i",
-      defaultDate: this.appFlatpickr || null,
-      onChange: (selectedDates, dateStr) => {
-        this.dateChange.emit(dateStr);
-      }
-    });
-  }
-
-  ngOnDestroy() {
-    if (this.fp) {
-      this.fp.destroy();
-    }
-  }
-}
+import { FlatpickrDirective } from '../../shared/directives/flatpickr.directive';
 
 @Component({
   selector: 'app-applications',
@@ -57,6 +27,8 @@ export class ApplicationsComponent implements OnInit {
   showDetailsModal = signal(false);
   selectedApp = signal<any>(null);
 
+  userProfile = signal<any>(null);
+
   extractingUrl = signal(false);
   generatingMessage = signal(false);
   generatedMessage = signal('');
@@ -68,6 +40,11 @@ export class ApplicationsComponent implements OnInit {
   generatingInterview = signal(false);
   interviewPrepResult = signal<any[] | null>(null);
   copiedInterviewPrep = signal<number | null>(null);
+
+  adaptingCV = signal(false);
+  adaptedCVResult = signal<string | null>(null);
+
+  viewMode = signal<'kanban' | 'list'>('kanban');
 
   boardData: { [key: string]: any[] } = {
     SENT: [],
@@ -123,6 +100,18 @@ export class ApplicationsComponent implements OnInit {
   ngOnInit() {
     this.loadApplications();
     this.initOnboarding();
+    this.loadUserProfile();
+  }
+
+  loadUserProfile() {
+    this.http.get<any>(`${environment.apiUrl}/profile`).subscribe({
+      next: (profile) => {
+        this.userProfile.set(profile || {});
+      },
+      error: () => {
+        this.userProfile.set({}); // Mock vacío si falla
+      }
+    });
   }
 
   initOnboarding() {
@@ -326,11 +315,36 @@ export class ApplicationsComponent implements OnInit {
         this.generatingMessage.set(false);
       },
       error: () => {
-        // Mock AI Generation
-        setTimeout(() => {
-          this.generatedMessage.set(`Hola equipo de ${app.offer?.company || 'la empresa'},\n\nHe visto su vacante para el puesto de ${app.offer?.title || 'desarrollador'} y creo que mi perfil hace un excelente match con lo que buscan. Tengo experiencia trabajando con tecnologías modernas y me encantaría aportar valor a su equipo.\n\nQuedo atento a sus comentarios.\n\nSaludos.`);
+        if (!environment.geminiApiKey) {
+          this.toastService.error('Configura la API Key de Gemini en environment.ts');
           this.generatingMessage.set(false);
-        }, 1500);
+          return;
+        }
+
+        const offerTitle = app.offer?.title || app.title || 'Puesto';
+        const offerCompany = app.offer?.company || app.company || 'la empresa';
+        const profile = this.userProfile() || {};
+        const userName = profile.firstName ? `${profile.firstName} ${profile.lastName}` : 'Candidato';
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
+        const payload = {
+          contents: [{
+            parts: [{ text: `Escribe un mensaje de introducción profesional (Cover Letter corta de 2 párrafos) para que el candidato "${userName}" postule al cargo de "${offerTitle}" en la empresa "${offerCompany}". No uses formato markdown de bloques.` }]
+          }]
+        };
+
+        this.http.post<any>(url, payload).subscribe({
+          next: (res) => {
+            const message = res.candidates[0].content.parts[0].text;
+            this.generatedMessage.set(message.trim());
+            this.generatingMessage.set(false);
+          },
+          error: (err) => {
+            console.error('Error al generar el mensaje con Gemini:', err);
+            this.generatingMessage.set(false);
+            this.toastService.error('Error al comunicarse con Gemini API.');
+          }
+        });
       }
     });
   }
@@ -352,12 +366,32 @@ export class ApplicationsComponent implements OnInit {
         this.translatingMessage.set(false);
       },
       error: () => {
-        // Mock translation
-        setTimeout(() => {
-          this.generatedMessage.set(`Hello team,\n\nI have seen your vacancy for the developer position and I think my profile makes an excellent match with what you are looking for. I have experience working with modern technologies and would love to add value to your team.\n\nI look forward to hearing from you.\n\nBest regards.`);
+        if (!environment.geminiApiKey) {
+          this.toastService.error('Configura la API Key de Gemini en environment.ts');
           this.translatingMessage.set(false);
-          this.toastService.success('Mensaje traducido al inglés (simulado)');
-        }, 1500);
+          return;
+        }
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
+        const payload = {
+          contents: [{
+            parts: [{ text: `Traduce el siguiente texto al inglés profesional, manteniendo el tono formal pero entusiasta:\n\n${currentMsg}` }]
+          }]
+        };
+
+        this.http.post<any>(url, payload).subscribe({
+          next: (res) => {
+            const translation = res.candidates[0].content.parts[0].text;
+            this.generatedMessage.set(translation.trim());
+            this.translatingMessage.set(false);
+            this.toastService.success('Mensaje traducido al inglés por IA');
+          },
+          error: (err) => {
+            console.error('Error al traducir con Gemini:', err);
+            this.translatingMessage.set(false);
+            this.toastService.error('Error al conectarse a Gemini API.');
+          }
+        });
       }
     });
   }
@@ -379,22 +413,44 @@ export class ApplicationsComponent implements OnInit {
         this.generatingInterview.set(false);
       },
       error: () => {
-        // Mock AI Generation for Interview Prep
-        setTimeout(() => {
-          this.interviewPrepResult.set([
-            {
-              question: '¿Por qué te interesa trabajar con nosotros en este puesto?',
-              advice: 'Las empresas buscan pasión y que conozcas sobre ellos.',
-              answer: `(Sugerencia basada en tu CV) He estado siguiendo el crecimiento de su empresa y me impresiona su enfoque en tecnología escalable. Mi experiencia previa con arquitecturas similares y mi dominio de las herramientas requeridas hacen que este puesto se alinee perfectamente con mi visión profesional.`
-            },
-            {
-              question: 'Cuéntanos de un desafío técnico difícil que hayas superado.',
-              advice: 'Utiliza el método STAR (Situación, Tarea, Acción, Resultado).',
-              answer: `(Sugerencia basada en tu CV) En mi último rol, tuvimos problemas de rendimiento en el frontend. Lideré la migración a un nuevo framework optimizando el bundle en un 40%, lo que redujo los tiempos de carga drásticamente y mejoró la experiencia del usuario.`
-            }
-          ]);
+        if (!environment.geminiApiKey) {
+          this.toastService.error('Configura la API Key de Gemini en environment.ts');
           this.generatingInterview.set(false);
-        }, 2000);
+          return;
+        }
+
+        const offerTitle = app.offer?.title || app.title || 'Puesto';
+        const offerCompany = app.offer?.company || app.company || 'Empresa';
+        const profile = this.userProfile() || {};
+        const userSkills = profile.skills ? profile.skills.join(', ') : 'Ninguna específica';
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
+        const payload = {
+          contents: [{
+            parts: [{ text: `Eres un preparador de entrevistas experto. El candidato postula a "${offerTitle}" en "${offerCompany}" y tiene las siguientes habilidades: "${userSkills}". Genera 2 preguntas de entrevista muy probables para este cargo. Para cada pregunta, da un consejo breve y una respuesta ideal sugerida basada en su perfil. Devuelve la respuesta ESTRICTAMENTE en formato JSON plano (sin markdown \`\`\`json) como un arreglo de objetos con esta estructura: [{ "question": "...", "advice": "...", "answer": "..." }].` }]
+          }]
+        };
+
+        this.http.post<any>(url, payload).subscribe({
+          next: (res) => {
+            try {
+              const rawText = res.candidates[0].content.parts[0].text;
+              const jsonText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+              const parsedData = JSON.parse(jsonText);
+              this.interviewPrepResult.set(parsedData);
+            } catch (e) {
+              console.error('Error parsing Gemini prep', e);
+              this.toastService.error('Error interpretando la respuesta de la IA.');
+            } finally {
+              this.generatingInterview.set(false);
+            }
+          },
+          error: (err) => {
+            console.error('Error con Gemini API:', err);
+            this.generatingInterview.set(false);
+            this.toastService.error('Error de conexión con Gemini.');
+          }
+        });
       }
     });
   }
@@ -432,18 +488,32 @@ export class ApplicationsComponent implements OnInit {
     const app = this.selectedApp();
     if (!app) return;
 
-    if (confirm('¿Estás seguro de que deseas eliminar esta postulación? Esta acción no se puede deshacer.')) {
+    if (confirm('¿Estás seguro de que deseas eliminar esta postulación?')) {
+      // Optimizamos mostrando el Toast con acción de Deshacer
+      const oldApps = [...this.applications()];
+
       this.http.delete(`${environment.apiUrl}/applications/${app.id}`).subscribe({
         next: () => {
           this.applications.update(apps => apps.filter(a => a.id !== app.id));
           this.updateBoard();
           this.closeDetails();
+          this.toastService.showWithAction('Postulación eliminada', 'Deshacer', () => {
+            this.applications.set(oldApps);
+            this.updateBoard();
+            // A real app would send a POST to restore it on the backend here
+            this.toastService.success('Postulación restaurada');
+          }, 'info', 6000);
         },
         error: () => {
           // Mock delete
           this.applications.update(apps => apps.filter(a => a.id !== app.id));
           this.updateBoard();
           this.closeDetails();
+          this.toastService.showWithAction('Postulación eliminada (simulado)', 'Deshacer', () => {
+            this.applications.set(oldApps);
+            this.updateBoard();
+            this.toastService.success('Postulación restaurada');
+          }, 'info', 6000);
         }
       });
     }
@@ -451,6 +521,97 @@ export class ApplicationsComponent implements OnInit {
 
   updateInterviewDate(dateStr: string) {
     this.selectedApp.update(a => ({ ...a, interviewDate: dateStr }));
+  }
+
+  addToGoogleCalendar() {
+    const app = this.selectedApp();
+    if (!app || !app.interviewDate) return;
+    const date = new Date(app.interviewDate);
+    const endDate = new Date(date.getTime() + 60 * 60 * 1000); // +1 hora
+
+    const formatDate = (d: Date) => d.toISOString().replace(/-|:|\.\d+/g, '');
+    const title = encodeURIComponent(`Entrevista: ${app.offer?.title || 'Trabajo'} en ${app.offer?.company || 'Empresa'}`);
+    const details = encodeURIComponent(`Entrevista guardada desde PostulaTrack.`);
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatDate(date)}/${formatDate(endDate)}&details=${details}`;
+
+    window.open(url, '_blank');
+  }
+
+  adaptCV() {
+    const app = this.selectedApp();
+    if (!app) return;
+
+    this.adaptingCV.set(true);
+    this.http.post<any>(`${environment.apiUrl}/ai/adapt-cv`, { applicationId: app.id }).subscribe({
+      next: (res) => {
+        this.adaptedCVResult.set(res.cvText);
+        this.adaptingCV.set(false);
+      },
+      error: () => {
+        if (!environment.geminiApiKey) {
+          this.toastService.error('Configura la API Key de Gemini en environment.ts');
+          this.adaptingCV.set(false);
+          return;
+        }
+
+        const company = app.offer?.company || 'la empresa';
+        const title = app.offer?.title || 'Desarrollador de Software';
+        const profile = this.userProfile() || {};
+
+        const userName = profile.user?.name || profile.name || profile.firstName ? `${profile.firstName} ${profile.lastName}` : 'Candidato';
+        const userHeadline = profile.headline || 'Profesional en Tecnología';
+        const userSummary = profile.summary || 'Profesional altamente motivado.';
+        const userSkills = profile.skills && profile.skills.length > 0
+          ? profile.skills.join(', ')
+          : 'Habilidades generales';
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
+        const payload = {
+          contents: [{
+            parts: [{ text: `Actúa como un experto en redacción de CVs. El candidato "${userName}" con titular "${userHeadline}", habilidades "${userSkills}" y resumen "${userSummary}", postula a la oferta de "${title}" en la empresa "${company}". Genera un currículum vitae estructurado y adaptado en texto plano (sin usar bloques de código ni markdown) resaltando cómo su perfil hace match con esa oferta.` }]
+          }]
+        };
+
+        this.http.post<any>(url, payload).subscribe({
+          next: (res) => {
+            const cvText = res.candidates[0].content.parts[0].text;
+            this.adaptedCVResult.set(cvText);
+            this.adaptingCV.set(false);
+          },
+          error: (err) => {
+            console.error('Error con Gemini API:', err);
+            this.toastService.error('Error al adaptar el CV con IA.');
+            this.adaptingCV.set(false);
+          }
+        });
+      }
+    });
+  }
+
+  downloadCV() {
+    const cvContent = this.adaptedCVResult();
+    if (!cvContent) return;
+
+    this.toastService.success('Preparando tu documento...');
+
+    setTimeout(() => {
+      // Creamos un Blob con el texto generado
+      const blob = new Blob([cvContent], { type: 'text/plain;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+
+      // Creamos un enlace invisible para forzar la descarga
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `CV_Adaptado_${this.selectedApp()?.offer?.company || 'Empresa'}.txt`;
+      document.body.appendChild(a);
+      a.click();
+
+      // Limpiamos
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      this.toastService.info('Documento descargado correctamente');
+    }, 1000);
   }
 
   private updateLocalApp(id: string, partial: any) {

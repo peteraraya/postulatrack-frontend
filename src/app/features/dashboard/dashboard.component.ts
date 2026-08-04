@@ -155,20 +155,42 @@ export class DashboardComponent implements OnInit {
     const targetId = item._uniqueId || item.id;
     this.analyzingOffer.set(targetId);
 
-    // Si el item tiene un offer.id real, lo enviamos, sino un mock
-    const realOfferId = item.offer?.id || item.id || '123';
+    if (!environment.geminiApiKey) {
+      alert('Falta configurar Gemini API Key en environment.ts');
+      this.analyzingOffer.set(null);
+      return;
+    }
 
-    this.http.post<any>(`${environment.apiUrl}/ai/analyze-offer`, { offerId: realOfferId }).subscribe({
-      next: (res) => {
-        this.aiAnalysisResult.update(prev => ({ ...prev, [targetId]: res.analysis }));
-        this.analyzingOffer.set(null);
+    const offerTitle = item.offer?.title || item.title || 'Trabajo';
+    const offerCompany = item.offer?.company || item.company || 'Empresa';
+
+    // Obtenemos el perfil local para tener contexto
+    this.http.get<any>(`${environment.apiUrl}/profile`).subscribe({
+      next: (profile) => {
+        const userSkills = profile?.skills ? profile.skills.join(', ') : 'Habilidades generales';
+        const userHeadline = profile?.headline || 'Profesional';
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
+        const payload = {
+          contents: [{
+            parts: [{ text: `Actúa como un reclutador experto. El candidato tiene este titular: "${userHeadline}" y estas habilidades: "${userSkills}". La oferta es para el puesto de "${offerTitle}" en la empresa "${offerCompany}". Escribe un párrafo muy breve y directo (máximo 3 líneas) indicando por qué hace buen match y qué 1 concepto clave debería estudiar o repasar para la entrevista. No uses formato markdown de bloques.` }]
+          }]
+        };
+
+        this.http.post<any>(url, payload).subscribe({
+          next: (res) => {
+            const analysis = res.candidates[0].content.parts[0].text;
+            this.aiAnalysisResult.update(prev => ({ ...prev, [targetId]: analysis }));
+            this.analyzingOffer.set(null);
+          },
+          error: (err) => {
+            console.error('Error con Gemini API:', err);
+            this.analyzingOffer.set(null);
+          }
+        });
       },
       error: () => {
-        // Mock result
-        setTimeout(() => {
-          this.aiAnalysisResult.update(prev => ({ ...prev, [targetId]: '¡Excelente oportunidad! Tu perfil encaja un 85% con lo que buscan. Te sugerimos repasar tus conocimientos en TypeScript y arquitectura en la nube para la entrevista.' }));
-          this.analyzingOffer.set(null);
-        }, 1500);
+        this.analyzingOffer.set(null);
       }
     });
   }

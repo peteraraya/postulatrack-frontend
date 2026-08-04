@@ -6,11 +6,12 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
+import { FlatpickrDirective } from '../../shared/directives/flatpickr.directive';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, FlatpickrDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './profile.component.html'
 })
@@ -25,6 +26,7 @@ export class ProfileComponent implements OnInit {
   loading = signal(false);
   userInfo = this.authService.getUserInfo();
 
+  isExtractingCV = signal(false);
   selectedDocument = signal<File | null>(null);
   documentPreviewUrl = signal<SafeResourceUrl | null>(null);
   documentType = signal<'pdf' | 'word' | null>(null);
@@ -35,18 +37,64 @@ export class ProfileComponent implements OnInit {
   isDragging = signal(false);
 
   profileForm = this.fb.group({
+    firstName: [''],
+    lastName: [''],
+    email: [''],
+    phone: [''],
     headline: [''],
-    experience: [''],
+    experienceLevel: [''], // Was 'experience'
     summary: [''],
     skills: [[] as string[]],
-    location: [''],
+    location: [''], // City/Country
+    availability: [''],
     portfolioUrl: [''],
+    linkedinUrl: [''],
+    githubUrl: [''],
+    languages: [[] as string[]],
+    hobbies: [[] as string[]],
+    workExperiences: this.fb.array([])
   });
+
+  get workExperiences() {
+    return this.profileForm.get('workExperiences') as any;
+  }
+
+  addWorkExperience() {
+    const expForm = this.fb.group({
+      company: [''],
+      role: [''],
+      startDate: [''],
+      endDate: [''],
+      description: ['']
+    });
+    this.workExperiences.push(expForm);
+    this.cdr.markForCheck();
+  }
+
+  removeWorkExperience(index: number) {
+    this.workExperiences.removeAt(index);
+    this.cdr.markForCheck();
+  }
 
   skillInput = '';
 
   get skillsArray(): string[] {
     return this.profileForm.get('skills')?.value || [];
+  }
+
+  get profileCompleteness(): number {
+    let score = 0;
+    const val = this.profileForm.value as any;
+    if (val.firstName && val.lastName) score += 10;
+    if (val.email && val.phone) score += 10;
+    if (val.headline) score += 10;
+    if (val.summary && val.summary.length > 10) score += 10;
+    if (val.skills && val.skills.length > 0) score += 15;
+    if (val.workExperiences && val.workExperiences.length > 0) score += 20;
+    if (val.location) score += 5;
+    if (val.linkedinUrl) score += 10;
+    if (this.selectedDocument() || this.existingDocumentUrl()) score += 10;
+    return Math.min(score, 100);
   }
 
   suggestSkills() {
@@ -97,6 +145,52 @@ export class ProfileComponent implements OnInit {
     }
   }
 
+  // Idiomas
+  languageInput = '';
+  get languagesArray(): string[] { return this.profileForm.get('languages')?.value || []; }
+
+  addLanguage(event: Event) {
+    event.preventDefault();
+    const item = this.languageInput.trim();
+    if (item && !this.languagesArray.includes(item)) {
+      this.profileForm.patchValue({ languages: [...this.languagesArray, item] });
+    }
+    this.languageInput = '';
+  }
+  removeLanguage(item: string) {
+    this.profileForm.patchValue({ languages: this.languagesArray.filter(s => s !== item) });
+  }
+  removeLastLanguage(event: Event) {
+    if (this.languageInput === '' && this.languagesArray.length > 0) {
+      const current = [...this.languagesArray];
+      current.pop();
+      this.profileForm.patchValue({ languages: current });
+    }
+  }
+
+  // Hobbies
+  hobbyInput = '';
+  get hobbiesArray(): string[] { return this.profileForm.get('hobbies')?.value || []; }
+
+  addHobby(event: Event) {
+    event.preventDefault();
+    const item = this.hobbyInput.trim();
+    if (item && !this.hobbiesArray.includes(item)) {
+      this.profileForm.patchValue({ hobbies: [...this.hobbiesArray, item] });
+    }
+    this.hobbyInput = '';
+  }
+  removeHobby(item: string) {
+    this.profileForm.patchValue({ hobbies: this.hobbiesArray.filter(s => s !== item) });
+  }
+  removeLastHobby(event: Event) {
+    if (this.hobbyInput === '' && this.hobbiesArray.length > 0) {
+      const current = [...this.hobbiesArray];
+      current.pop();
+      this.profileForm.patchValue({ hobbies: current });
+    }
+  }
+
   ngOnInit() {
     this.http.get<any>(`${environment.apiUrl}/profile`).subscribe({
       next: (profile) => {
@@ -104,13 +198,43 @@ export class ProfileComponent implements OnInit {
           if (profile.user) {
             this.userInfo = { ...this.userInfo, ...profile.user };
           }
+
+          // Clear existing array
+          while (this.workExperiences.length !== 0) {
+            this.workExperiences.removeAt(0);
+          }
+
+          if (profile.workExperiences && profile.workExperiences.length > 0) {
+            profile.workExperiences.forEach((exp: any) => {
+              this.workExperiences.push(this.fb.group({
+                company: [exp.company || ''],
+                role: [exp.role || ''],
+                startDate: [exp.startDate || ''],
+                endDate: [exp.endDate || ''],
+                description: [exp.description || '']
+              }));
+            });
+          } else {
+            // Default 1 empty experience
+            this.addWorkExperience();
+          }
+
           this.profileForm.patchValue({
+            firstName: profile.firstName || this.userInfo?.name?.split(' ')[0] || '',
+            lastName: profile.lastName || this.userInfo?.name?.split(' ').slice(1).join(' ') || '',
+            email: profile.email || this.userInfo?.email || '',
+            phone: profile.phone || '',
             headline: profile.headline || '',
-            experience: profile.experience || '',
+            experienceLevel: profile.experienceLevel || profile.experience || '',
             summary: profile.summary || '',
             skills: profile.skills || [],
             location: profile.location || '',
-            portfolioUrl: profile.portfolioUrl || ''
+            availability: profile.availability || '',
+            portfolioUrl: profile.portfolioUrl || '',
+            linkedinUrl: profile.linkedinUrl || '',
+            githubUrl: profile.githubUrl || '',
+            languages: profile.languages || [],
+            hobbies: profile.hobbies || []
           });
           if (profile.cvDocumentUrl) {
             const fullUrl = this.getFullUrl(profile.cvDocumentUrl);
@@ -195,6 +319,112 @@ export class ProfileComponent implements OnInit {
     }
   }
 
+  extractDataFromCV() {
+    if (!this.selectedDocument()) {
+      this.toastService.error('Debes adjuntar un documento nuevo para extraer datos.');
+      return;
+    }
+
+    if (!environment.geminiApiKey) {
+      this.toastService.error('Falta configurar Gemini API Key en environment.ts');
+      return;
+    }
+
+    this.isExtractingCV.set(true);
+    this.toastService.info('Analizando tu CV con Gemini 1.5 Flash...', 2000);
+
+    const processBase64 = (base64Data: string) => {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
+
+      const payload = {
+        contents: [{
+          parts: [
+            { text: "Eres un asistente experto en Recursos Humanos. Extrae la siguiente información del currículum adjunto y devuélvela ESTRICTAMENTE en formato JSON válido (sin markdown ni etiquetas ```json, solo el JSON puro). Las propiedades esperadas son:\n- firstName (string)\n- lastName (string)\n- email (string)\n- phone (string)\n- location (string)\n- headline (string)\n- experienceLevel (string, ej. 'Junior', 'Mid', 'Senior')\n- summary (string)\n- skills (array of strings)\n- languages (string)\n- hobbies (string)\n- workExperiences (array of objects con: company, role, startDate, endDate, description)\nSi falta algún dato, déjalo vacío." },
+            { inlineData: { mimeType: "application/pdf", data: base64Data } }
+          ]
+        }]
+      };
+
+      this.http.post<any>(url, payload).subscribe({
+        next: (res) => {
+          try {
+            const rawText = res.candidates[0].content.parts[0].text;
+            // Limpiar posible markdown inyectado por Gemini
+            const jsonText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+            const parsedData = JSON.parse(jsonText);
+
+            // Borramos experiencias vacías
+            while (this.workExperiences.length !== 0) {
+              this.workExperiences.removeAt(0);
+            }
+
+            if (parsedData.workExperiences && parsedData.workExperiences.length > 0) {
+              parsedData.workExperiences.forEach((exp: any) => {
+                this.workExperiences.push(this.fb.group({
+                  company: [exp.company || ''],
+                  role: [exp.role || ''],
+                  startDate: [exp.startDate || ''],
+                  endDate: [exp.endDate || ''],
+                  description: [exp.description || '']
+                }));
+              });
+            } else {
+              this.addWorkExperience();
+            }
+
+            // Autocompletamos el resto del formulario
+            this.profileForm.patchValue({
+              firstName: parsedData.firstName || '',
+              lastName: parsedData.lastName || '',
+              email: parsedData.email || '',
+              phone: parsedData.phone || '',
+              headline: parsedData.headline || '',
+              experienceLevel: parsedData.experienceLevel || '',
+              summary: parsedData.summary || '',
+              skills: parsedData.skills || [],
+            location: parsedData.location || '',
+            languages: parsedData.languages || [],
+            hobbies: parsedData.hobbies || []
+          });
+
+            this.isExtractingCV.set(false);
+            this.toastService.success('¡Magia! Tu perfil ha sido autocompletado desde tu CV real.');
+            this.cdr.markForCheck();
+          } catch (e) {
+            console.error('Error parsing Gemini JSON', e);
+            this.isExtractingCV.set(false);
+            this.toastService.error('Error al interpretar el CV. Intenta de nuevo.');
+          }
+        },
+        error: (err) => {
+          console.error(err);
+          this.isExtractingCV.set(false);
+          this.toastService.error('Error de conexión con Gemini. Verifica tu API Key.');
+        }
+      });
+    };
+
+    const file = this.selectedDocument();
+    if (file) {
+      if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+        this.toastService.error('Gemini solo soporta extracción desde archivos PDF.');
+        this.isExtractingCV.set(false);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64Data = result.split(',')[1];
+        processBase64(base64Data);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      this.toastService.error('Por favor, selecciona de nuevo tu archivo localmente para analizarlo.');
+      this.isExtractingCV.set(false);
+    }
+  }
+
   removeDocument() {
     this.selectedDocument.set(null);
     this.documentPreviewUrl.set(null);
@@ -217,6 +447,69 @@ export class ProfileComponent implements OnInit {
     }
 
     return finalUrl;
+  }
+
+  generateMyCV() {
+    const profile = this.profileForm.value as any;
+    const userName = (profile.firstName || profile.lastName)
+      ? `${profile.firstName} ${profile.lastName}`.trim()
+      : (this.userInfo?.name || 'Candidato');
+
+    let exps = 'Sin experiencia registrada.';
+    if (profile.workExperiences && profile.workExperiences.length > 0) {
+      exps = profile.workExperiences.map((exp: any) =>
+        `Cargo: ${exp.role || 'No especificado'}\nEmpresa: ${exp.company || 'No especificada'}\nPeríodo: ${exp.startDate || '?'} a ${exp.endDate || 'Presente'}\nDescripción:\n${exp.description || 'Sin descripción'}`
+      ).join('\n\n---------------------------\n\n');
+    }
+
+    const cvText = `=========================================================
+CURRÍCULUM VITAE BASE
+Generado por PostulaTrack
+
+DATOS PERSONALES
+----------------
+Nombre: ${userName}
+Correo: ${profile.email || ''}
+Teléfono: ${profile.phone || ''}
+Ubicación: ${profile.location || ''}
+Disponibilidad: ${profile.availability || ''}
+
+ENLACES
+-------
+LinkedIn: ${profile.linkedinUrl || ''}
+GitHub: ${profile.githubUrl || ''}
+Portafolio: ${profile.portfolioUrl || ''}
+
+PERFIL PROFESIONAL
+------------------
+Titular: ${profile.headline || ''}
+Nivel: ${profile.experienceLevel || ''}
+
+Resumen:
+${profile.summary || ''}
+
+EXPERIENCIA LABORAL
+-------------------
+${exps}
+
+HABILIDADES E IDIOMAS
+---------------------
+Habilidades Técnicas: ${profile.skills ? profile.skills.join(', ') : ''}
+Idiomas: ${profile.languages ? profile.languages.join(', ') : ''}
+Intereses: ${profile.hobbies ? profile.hobbies.join(', ') : ''}
+`;
+
+    const blob = new Blob([cvText], { type: 'text/plain;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `CV_Base_${userName.replace(/\s+/g, '_')}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    this.toastService.success('¡Tu CV base ha sido generado y descargado!');
   }
 
   saveProfile() {

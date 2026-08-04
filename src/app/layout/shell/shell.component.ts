@@ -24,6 +24,7 @@ export class ShellComponent {
 
   userInfo: any = this.authService.getUserInfo() || {};
   skillInput = '';
+  isMobileMenuOpen = false;
 
   constructor() {
     // Attempt to enrich userInfo from backend if token payload is missing details
@@ -70,5 +71,52 @@ export class ShellComponent {
       currentSkills.pop();
       this.filterService.updateFilters({ skills: currentSkills });
     }
+  }
+
+  getActiveFiltersCount(): number {
+    const f = this.filterService.filters();
+    let count = 0;
+    if (f.title) count++;
+    if (f.company) count++;
+    if (f.location) count++;
+    if (f.country) count++;
+    if (f.experience) count++;
+    if (f.salaryMin) count++;
+    if (f.workModel) count++;
+    if (f.skills && f.skills.length > 0) count += f.skills.length;
+    return count;
+  }
+
+  getActiveFilterBadges(): {key: string, value: string}[] {
+    const f = this.filterService.filters();
+    const badges: {key: string, value: string}[] = [];
+    if (f.title) badges.push({key: 'title', value: f.title});
+    if (f.company) badges.push({key: 'company', value: f.company});
+    if (f.location) badges.push({key: 'location', value: f.location});
+    if (f.workModel) badges.push({key: 'workModel', value: f.workModel});
+    if (f.skills) {
+      f.skills.forEach(s => badges.push({key: 'skill', value: s}));
+    }
+    return badges;
+  }
+
+  removeFilterBadge(badge: {key: string, value: string}) {
+    const f = this.filterService.filters();
+    if (badge.key === 'title') this.filterService.updateFilters({title: ''});
+    if (badge.key === 'company') this.filterService.updateFilters({company: ''});
+    if (badge.key === 'location') this.filterService.updateFilters({location: ''});
+    if (badge.key === 'workModel') this.filterService.updateFilters({workModel: ''});
+    if (badge.key === 'skill') {
+      this.filterService.updateFilters({skills: f.skills.filter(s => s !== badge.value)});
+    }
+    this.filterService.applyFilters();
+  }
+
+  toggleMobileMenu() {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+  }
+
+  closeMobileMenu() {
+    this.isMobileMenuOpen = false;
   }
 }

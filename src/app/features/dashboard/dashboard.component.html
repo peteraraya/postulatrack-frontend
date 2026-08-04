@@ -1,6 +1,17 @@
 <div>
   <div class="mb-8">
     <h1 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Tu Resumen</h1>
+
+    <!-- Mensaje Motivacional (Gamificación) -->
+    <div *ngIf="(stats()?.sent || 0) > 0" class="mb-6 bg-gradient-to-r from-indigo-600 to-sky-500 rounded-xl p-5 text-white shadow-md flex items-center justify-between transform transition-all hover:scale-[1.01]">
+      <div>
+        <h2 class="text-lg font-extrabold flex items-center gap-2">
+          <span>🚀</span> ¡Gran trabajo manteniendo el ritmo!
+        </h2>
+        <p class="text-indigo-100 text-sm mt-1 font-medium">Has enviado {{ stats()?.sent || 0 }} postulaciones en total. La constancia es clave, ¡estás cada vez más cerca de tu próxima gran oportunidad!</p>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
       <!-- Panel de Estadísticas (Tarjetas) -->
@@ -33,6 +44,32 @@
 
     </div>
   </div>
+
+  <!-- SECCIÓN DE PRÓXIMAS ENTREVISTAS -->
+  <!-- Chrome Extension Banner -->
+  <div class="mb-8">
+    <!-- <div class="bg-gradient-to-r from-slate-800 to-indigo-900 rounded-xl p-6 shadow-md border border-slate-700 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="absolute -right-10 -top-10 opacity-20">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-40 w-40 text-indigo-400" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0C5.373 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
+        </svg>
+      </div>
+      <div class="relative z-10">
+        <h3 class="text-white font-bold text-lg flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          Próximamente: Web Clipper para Chrome
+        </h3>
+        <p class="text-slate-300 text-sm mt-1 max-w-xl">Ahorra tiempo guardando ofertas directamente desde LinkedIn, GetOnBoard y otros sitios de empleo con un solo clic. ¡La IA se encargará de extraer todos los datos!</p>
+      </div>
+      <div class="relative z-10 shrink-0">
+        <button class="bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors text-sm">
+          Anotarme a la lista de espera
+        </button>
+      </div>
+    </div>
+  </div> -->
 
   <!-- SECCIÓN DE PRÓXIMAS ENTREVISTAS -->
   <div class="mb-8" *ngIf="upcomingInterviews().length > 0">
@@ -117,7 +154,7 @@
 
   <div *ngIf="!loading() && !error()">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" *ngIf="offers().length > 0">
-      <div *ngFor="let item of offers()" class="bg-white dark:bg-slate-800 p-5 shadow-sm rounded-lg border border-gray-200 dark:border-slate-700 hover:shadow-md dark:hover:shadow-indigo-500/10 transition-shadow relative overflow-hidden flex flex-col h-full">
+      <div *ngFor="let item of offers()" class="bg-white dark:bg-slate-800 p-5 shadow-sm rounded-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl dark:hover:shadow-indigo-500/20 transition-all duration-300 hover:-translate-y-1 cursor-pointer relative overflow-hidden flex flex-col h-full group">
         <!-- Decoración superior según el nivel de match -->
         <div class="absolute top-0 left-0 w-full h-1"
              [ngClass]="{'bg-green-500': item.matchPercentage >= 80, 'bg-yellow-400': item.matchPercentage >= 50 && item.matchPercentage < 80, 'bg-gray-300 dark:bg-slate-600': item.matchPercentage < 50}"></div>
@@ -206,12 +243,19 @@
       </div>
     </div>
 
-    <div *ngIf="offers().length === 0" class="text-center py-10 bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-600 shadow-sm">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      <p class="text-gray-500 dark:text-gray-400 font-medium text-lg">No hay ofertas recomendadas en este momento.</p>
-      <p class="text-gray-400 dark:text-gray-500 text-sm mt-1">Ajusta tus filtros globales o completa más tu perfil para obtener mejores resultados.</p>
+    <!-- Mejor Empty State -->
+    <div *ngIf="offers().length === 0" class="text-center py-16 px-6 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-slate-600 shadow-sm flex flex-col items-center justify-center">
+      <div class="h-20 w-20 bg-indigo-50 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-indigo-400 dark:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      </div>
+      <h3 class="text-gray-900 dark:text-white font-bold text-xl mb-2">Aún no hay ofertas para ti</h3>
+      <p class="text-gray-500 dark:text-gray-400 text-sm max-w-md mx-auto mb-6">Estamos buscando las mejores oportunidades que hagan match con tu perfil. Puedes ajustar tus filtros globales para ampliar la búsqueda.</p>
+      <button (click)="filterService.toggleMenu()" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+        Ajustar Filtros Globales
+      </button>
     </div>
   </div>
 </div>
