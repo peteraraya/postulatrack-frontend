@@ -1,0 +1,163 @@
+<div class="max-w-5xl mx-auto p-4 sm:p-8 space-y-12 relative min-h-[80vh]">
+  <!-- Elemento de fondo -->
+  <div class="absolute top-0 right-0 w-full h-[400px] bg-gradient-to-b from-indigo-500/10 to-sky-500/5 blur-3xl -z-10 rounded-full pointer-events-none"></div>
+
+  <div class="text-center mb-8 animate-fade-in">
+    <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-gray-900 dark:text-gray-100 tracking-tight flex items-center justify-center gap-3">
+      Analizador Inteligente de Ofertas
+    </h1>
+    <p class="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+      Pega la descripción de la oferta de trabajo y nuestra IA cruzará la información con tu perfil para decirte qué tan compatible eres y qué necesitas mejorar.
+    </p>
+  </div>
+
+  <!-- Input Zone -->
+  <div class="p-1 border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl rounded-2xl overflow-hidden animate-fade-in">
+    <div class="p-6 sm:p-8 flex flex-col gap-6">
+      <div class="relative">
+        <svg class="absolute top-4 left-4 w-6 h-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <textarea
+          rows="6"
+          placeholder="Pega aquí toda la descripción del puesto de trabajo (requisitos, funciones, etc.)..."
+          class="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-gray-100 transition-shadow resize-none"
+          [(ngModel)]="jobDescription"
+          [disabled]="isAnalyzing()"
+        ></textarea>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button *ngIf="jobDescription().trim()"
+          (click)="clear()"
+          [disabled]="isAnalyzing()"
+          class="flex items-center gap-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-xl transition-all duration-300 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span>Limpiar</span>
+        </button>
+        <button
+          (click)="handleAnalyze()"
+          [disabled]="isAnalyzing() || !jobDescription().trim()"
+          class="flex items-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all duration-300 font-bold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <div *ngIf="isAnalyzing()" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          <span *ngIf="isAnalyzing()">Analizando...</span>
+
+          <svg *ngIf="!isAnalyzing()" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span *ngIf="!isAnalyzing()">Analizar con IA</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isAnalyzing()" class="flex flex-col items-center justify-center py-12 space-y-4 animate-fade-in">
+    <div class="relative w-24 h-24 flex items-center justify-center">
+      <div class="absolute inset-0 border-4 border-indigo-200 dark:border-indigo-900/30 rounded-full animate-pulse"></div>
+      <div class="absolute inset-0 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-indigo-600 dark:text-indigo-400 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+      </svg>
+    </div>
+    <p class="text-lg font-medium text-gray-600 dark:text-gray-400 animate-pulse">
+      Cruzando datos con tu perfil...
+    </p>
+  </div>
+
+  <!-- Results Zone -->
+  <div *ngIf="result()" class="flex flex-col gap-6 animate-fade-in">
+
+    <!-- Extracted Data Badges -->
+    <div *ngIf="result()?.extractedData" class="flex flex-wrap items-center justify-center gap-4">
+      <div class="px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm font-semibold border border-blue-100 dark:border-blue-800 flex items-center gap-2" title="Empresa">
+        <span>🏢</span> {{ result()?.extractedData?.company }}
+      </div>
+      <div class="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-sm font-semibold border border-indigo-100 dark:border-indigo-800 flex items-center gap-2" title="Rol detectado">
+        <span>👨‍💻</span> {{ result()?.extractedData?.role }}
+      </div>
+      <div class="px-4 py-2 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-sm font-semibold border border-green-100 dark:border-green-800 flex items-center gap-2" title="Modalidad">
+        <span>🌍</span> {{ result()?.extractedData?.modality }}
+      </div>
+      <div class="px-4 py-2 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-sm font-semibold border border-amber-100 dark:border-amber-800 flex items-center gap-2" title="Salario">
+        <span>💰</span> {{ result()?.extractedData?.salary }}
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <!-- Score & Verdict -->
+      <div class="md:col-span-1 space-y-6">
+        <div class="p-6 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-2xl flex flex-col items-center text-center shadow-md">
+          <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Compatibilidad</h3>
+          <div class="relative w-32 h-32 flex items-center justify-center mb-4">
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="40" stroke="currentColor" stroke-width="8" fill="transparent" class="text-gray-100 dark:text-slate-700" />
+              <circle cx="50" cy="50" r="40" stroke="currentColor" stroke-width="8" fill="transparent"
+                      [attr.stroke-dasharray]="(251.2 * (result()!.compatibilityScore / 100)) + ' 251.2'"
+                      [ngClass]="{'text-red-500': result()!.compatibilityScore < 50, 'text-yellow-500': result()!.compatibilityScore >= 50 && result()!.compatibilityScore < 80, 'text-green-500': result()!.compatibilityScore >= 80}"
+                      class="transition-all duration-1000 ease-out" />
+            </svg>
+            <span class="absolute text-3xl font-black text-gray-900 dark:text-white">{{ result()?.compatibilityScore }}%</span>
+          </div>
+          <p class="text-sm text-gray-600 dark:text-gray-300 font-medium">
+            {{ result()?.verdict }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Details -->
+      <div class="md:col-span-2 space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <!-- Matches -->
+          <div class="p-6 border border-green-200 dark:border-green-900/30 bg-green-50/30 dark:bg-green-900/10 rounded-2xl shadow-sm">
+            <h3 class="text-lg font-bold text-green-700 dark:text-green-400 mb-4 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg> Fortalezas (Matches)
+            </h3>
+            <ul class="space-y-4 list-none p-0 m-0">
+              <li *ngFor="let m of result()?.matches" class="flex flex-col">
+                <span class="font-bold text-gray-900 dark:text-gray-100">{{ m.skill }}</span>
+                <span class="text-xs text-green-600 dark:text-green-500 mt-1 bg-green-100 dark:bg-green-900/30 w-fit px-2 py-0.5 rounded-md">✓ {{ m.evidenceInCV }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Gaps -->
+          <div class="p-6 border border-orange-200 dark:border-orange-900/30 bg-orange-50/30 dark:bg-orange-900/10 rounded-2xl shadow-sm">
+            <h3 class="text-lg font-bold text-orange-700 dark:text-orange-400 mb-4 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg> Brechas (Gaps)
+            </h3>
+            <ul class="space-y-3 list-none p-0 m-0">
+              <li *ngFor="let g of result()?.gaps" class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full" [ngClass]="g.severity === 'high' ? 'bg-red-500' : 'bg-orange-400'"></span>
+                <span class="font-medium text-gray-800 dark:text-gray-200">{{ g.skill }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Strategy -->
+        <div class="p-6 border border-indigo-200 dark:border-indigo-900/30 bg-indigo-50/30 dark:bg-indigo-900/10 rounded-2xl shadow-sm">
+          <h3 class="text-lg font-bold text-indigo-700 dark:text-indigo-400 mb-4 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg> Recomendaciones Estratégicas
+          </h3>
+          <ul class="space-y-3 list-none p-0 m-0">
+            <li *ngFor="let rec of result()?.strategicRecommendations" class="flex items-start gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 leading-relaxed">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+              <span>{{ rec }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

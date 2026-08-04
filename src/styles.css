@@ -1,15 +1,96 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
+@import "flatpickr/dist/flatpickr.min.css";
+@import "flatpickr/dist/themes/airbnb.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: light;
+  --app-bg: #f8fafc;
+  --app-bg-secondary: #eef2ff;
+  --app-card: rgba(255, 255, 255, 0.88);
+  --app-border: rgba(148, 163, 184, 0.35);
+  --app-text: #0f172a;
+  --app-muted: #475569;
+  --app-accent: #4f46e5;
+  --app-accent-2: #0ea5e9;
+}
+
+.dark {
+  color-scheme: dark;
+  --app-bg: #020617;
+  --app-bg-secondary: #0f172a;
+  --app-card: rgba(15, 23, 42, 0.9);
+  --app-border: rgba(71, 85, 105, 0.86);
+  --app-text: #e2e8f0;
+  --app-muted: #94a3b8;
+  --app-accent: #818cf8;
+  --app-accent-2: #38bdf8;
+}
+
 body {
   font-family: 'Inter', sans-serif;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 html, body {
-  @apply h-full w-full m-0 bg-[#F8FAFC] text-gray-900 dark:bg-slate-900 dark:text-slate-100;
+  @apply h-full w-full m-0;
+  background:
+    radial-gradient(circle at top left, rgba(99, 102, 241, 0.15), transparent 32%),
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 26%),
+    var(--app-bg);
+  color: var(--app-text);
+}
+
+/* Professional panel defaults */
+.bg-white,
+.bg-slate-800,
+.bg-slate-900,
+.bg-gray-50,
+.bg-gray-100,
+.bg-gray-200 {
+  position: relative;
+  isolation: isolate;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 14px 34px -22px rgba(15, 23, 42, 0.42);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  overflow: hidden;
+}
+
+.bg-white,
+.bg-gray-50,
+.bg-gray-100 {
+  background-image:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.92));
+}
+
+.bg-slate-800,
+.bg-slate-900,
+.dark .bg-white,
+.dark .bg-gray-50,
+.dark .bg-gray-100,
+.dark .bg-gray-200 {
+  background-image:
+    linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.9));
+}
+
+.bg-white::before,
+.bg-slate-800::before,
+.bg-slate-900::before,
+.bg-gray-50::before,
+.bg-gray-100::before,
+.bg-gray-200::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top left, rgba(99, 102, 241, 0.12), transparent 38%),
+    radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.10), transparent 32%);
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* Custom Modern Scrollbar */
@@ -36,42 +117,167 @@ html, body {
 
 /* Global Dark Mode Overrides */
 .dark .bg-white {
-  @apply bg-slate-800 border-slate-700;
+  background-color: rgba(15, 23, 42, 0.88);
+  border-color: var(--app-border);
 }
 .dark .text-gray-900 {
-  @apply text-slate-100;
+  color: var(--app-text);
 }
 .dark .text-gray-800 {
-  @apply text-slate-200;
+  color: #cbd5e1;
 }
 .dark .text-gray-700 {
-  @apply text-slate-300;
+  color: #94a3b8;
 }
 .dark .text-gray-600 {
-  @apply text-slate-400;
+  color: #64748b;
 }
 .dark .text-gray-500 {
-  @apply text-slate-500;
+  color: #475569;
 }
 .dark .border-gray-300,
-.dark .border-gray-200 {
-  @apply border-slate-700;
-}
+.dark .border-gray-200,
 .dark .border-gray-100 {
-  @apply border-slate-800;
+  border-color: var(--app-border);
 }
 .dark .bg-gray-50 {
-  @apply bg-slate-800/50;
+  background-color: rgba(15, 23, 42, 0.72);
 }
 .dark .bg-gray-100 {
-  @apply bg-slate-700;
+  background-color: rgba(30, 41, 59, 0.9);
 }
 .dark .bg-gray-200 {
-  @apply bg-slate-600;
+  background-color: rgba(51, 65, 85, 0.9);
 }
 .dark .bg-\[\#F8FAFC\] {
-  @apply bg-slate-900;
+  background-color: #020617;
 }
 .dark .bg-white\/80 {
-  @apply bg-slate-900/80;
+  background-color: rgba(15, 23, 42, 0.8);
 }
+
+/* Improve contrast for inputs and selects */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: rgba(15, 23, 42, 0.95);
+  color: #e2e8f0;
+  border-color: rgba(100, 116, 139, 0.72);
+  box-shadow: inset 0 1px 2px rgba(2, 6, 23, 0.2);
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b;
+}
+
+/* Premium surface and focus states */
+input:focus,
+textarea:focus,
+select:focus {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+  border-color: rgba(99, 102, 241, 0.8);
+}
+
+/* Kanban Drag and Drop Animations */
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 0.5rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  transform: rotate(3deg) scale(1.02);
+  cursor: grabbing !important;
+  opacity: 0.95;
+  background-color: var(--app-card) !important;
+  border: 1px solid var(--app-accent) !important;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.2;
+  border: 2px dashed #94a3b8;
+  background-color: transparent !important;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cdk-drop-list-dragging .cdk-drag {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Flatpickr Dark Mode Overrides */
+.dark .flatpickr-calendar {
+  background: rgba(15, 23, 42, 0.95) !important;
+  box-shadow: 0 14px 34px -22px rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid var(--app-border) !important;
+}
+
+.dark .flatpickr-calendar::before,
+.dark .flatpickr-calendar::after {
+  display: none !important;
+}
+
+.dark .flatpickr-month,
+.dark .flatpickr-current-month,
+.dark .flatpickr-weekday,
+.dark span.flatpickr-weekday,
+.dark .flatpickr-current-month input.cur-year {
+  color: #e2e8f0 !important;
+  fill: #e2e8f0 !important;
+  background: transparent !important;
+}
+
+.dark .flatpickr-day {
+  color: #cbd5e1 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.dark .flatpickr-day:hover,
+.dark .flatpickr-day:focus {
+  background: rgba(71, 85, 105, 0.5) !important;
+  border-color: rgba(71, 85, 105, 0.5) !important;
+}
+
+.dark .flatpickr-day.today {
+  border-color: rgba(99, 102, 241, 0.5) !important;
+}
+
+.dark .flatpickr-day.selected,
+.dark .flatpickr-day.startRange,
+.dark .flatpickr-day.endRange {
+  background: #4f46e5 !important;
+  color: #fff !important;
+  border-color: #4f46e5 !important;
+}
+
+.dark .flatpickr-day.flatpickr-disabled,
+.dark .flatpickr-day.prevMonthDay,
+.dark .flatpickr-day.nextMonthDay,
+.dark .flatpickr-day.notAllowed,
+.dark .flatpickr-day.notAllowed.prevMonthDay,
+.dark .flatpickr-day.notAllowed.nextMonthDay {
+  color: #475569 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.dark .flatpickr-time {
+  border-top-color: var(--app-border) !important;
+}
+
+.dark .flatpickr-time input {
+  color: #e2e8f0 !important;
+}
+
+.dark .flatpickr-time .flatpickr-time-separator {
+  color: #e2e8f0 !important;
+}
+
+.dark .flatpickr-time input:hover,
+.dark .flatpickr-time .flatpickr-am-pm:hover,
+.dark .flatpickr-time input:focus,
+.dark .flatpickr-time .flatpickr-am-pm:focus {
+  background: rgba(71, 85, 105, 0.5) !important;
+}
+

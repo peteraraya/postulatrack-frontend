@@ -31,32 +31,50 @@ export class InterviewPrepComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => {
-        // Mock data
-        setTimeout(() => {
-          this.questions.set([
-            {
-              question: 'Háblame de ti. ¿Quién eres profesionalmente?',
-              advice: 'Las empresas quieren un resumen rápido de tu trayectoria y tu valor actual, no toda tu vida.',
-              answer: 'Soy un desarrollador de software con experiencia enfocada en construir aplicaciones escalables y resolver problemas complejos. Me apasiona aprender nuevas tecnologías y en mis últimos proyectos he logrado optimizar procesos clave trabajando en equipo.'
-            },
-            {
-              question: '¿Cuál consideras que es tu mayor fortaleza?',
-              advice: 'Relaciona tu fortaleza directamente con el tipo de trabajo al que postulas.',
-              answer: 'Mi mayor fortaleza es la adaptabilidad y el aprendizaje rápido. Dado que en tecnología las herramientas cambian constantemente, me he acostumbrado a leer documentación y dominar nuevos frameworks en tiempo récord para aportar al equipo desde la primera semana.'
-            },
-            {
-              question: '¿Por qué deberíamos contratarte a ti y no a otros?',
-              advice: 'Destaca aquello que te hace único según las habilidades de tu perfil.',
-              answer: 'Porque mi combinación de habilidades técnicas y mi nivel de experiencia me permiten no solo escribir código de calidad, sino también entender las necesidades del negocio. Además, mi capacidad de comunicación facilita la colaboración con otros departamentos.'
-            },
-            {
-              question: '¿Dónde te ves en 5 años?',
-              advice: 'Muestra ambición pero también estabilidad y compromiso con la carrera profesional.',
-              answer: 'En 5 años me veo asumiendo un rol de mayor liderazgo técnico o especialización, ayudando a mentorizar a desarrolladores más junior y tomando decisiones de arquitectura importantes en productos que impacten a miles de usuarios.'
-            }
-          ]);
+        if (!environment.geminiApiKey) {
+          this.toastService.error('Falta configurar Gemini API Key en environment.ts');
           this.loading.set(false);
-        }, 1500);
+          return;
+        }
+
+        this.http.get<any>(`${environment.apiUrl}/profile`).subscribe({
+          next: (profile) => {
+            const userSkills = profile?.skills ? profile.skills.join(', ') : 'Habilidades generales';
+            const userHeadline = profile?.headline || 'Profesional';
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
+            const payload = {
+              contents: [{
+                parts: [{ text: `Eres un preparador de entrevistas experto. El candidato tiene este titular: "${userHeadline}" y estas habilidades: "${userSkills}". Genera 4 preguntas de entrevista muy probables de forma general para su perfil. Para cada pregunta, da un consejo breve y una respuesta ideal sugerida basada en su perfil. Devuelve la respuesta ESTRICTAMENTE en formato JSON plano (sin usar bloques de código ni markdown) como un arreglo de objetos con esta estructura: [{ "question": "...", "advice": "...", "answer": "..." }].` }]
+              }]
+            };
+
+            this.http.post<any>(url, payload).subscribe({
+              next: (res) => {
+                try {
+                  const rawText = res.candidates[0].content.parts[0].text;
+                  const jsonText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+                  const parsedData = JSON.parse(jsonText);
+                  this.questions.set(parsedData);
+                } catch (e) {
+                  console.error('Error parsing Gemini prep', e);
+                  this.toastService.error('Error interpretando la respuesta de la IA.');
+                } finally {
+                  this.loading.set(false);
+                }
+              },
+              error: (err) => {
+                console.error('Error con Gemini API:', err);
+                this.toastService.error('Error de conexión con Gemini.');
+                this.loading.set(false);
+              }
+            });
+          },
+          error: () => {
+            this.toastService.error('No se pudo obtener el perfil del usuario.');
+            this.loading.set(false);
+          }
+        });
       }
     });
   }
