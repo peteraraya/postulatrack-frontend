@@ -267,13 +267,13 @@
               </h4>
               <div class="space-y-3">
                 <div>
-                  <input type="text" [(ngModel)]="selectedApp().contactName" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Nombre del Reclutador o Entrevistador">
+                  <input type="text" [ngModel]="selectedApp()?.contactName" (ngModelChange)="updateAppField('contactName', $event)" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Nombre del Reclutador o Entrevistador">
                 </div>
                 <div>
-                  <input type="email" [(ngModel)]="selectedApp().contactEmail" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Correo Electrónico">
+                  <input type="email" [ngModel]="selectedApp()?.contactEmail" (ngModelChange)="updateAppField('contactEmail', $event)" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="Correo Electrónico">
                 </div>
                 <div>
-                  <input type="url" [(ngModel)]="selectedApp().contactLinkedin" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="URL del perfil de LinkedIn">
+                  <input type="url" [ngModel]="selectedApp()?.contactLinkedin" (ngModelChange)="updateAppField('contactLinkedin', $event)" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-2 px-3 border" placeholder="URL del perfil de LinkedIn">
                 </div>
               </div>
             </div>
@@ -298,7 +298,7 @@
             <!-- Tab Content: Notes -->
             <div *ngIf="activeTab() === 'notes'" class="flex-1 flex flex-col">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Añade aquí todo lo relevante sobre esta postulación</label>
-              <textarea [(ngModel)]="selectedApp().notes" rows="15" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-3 px-4 border resize-none flex-1 leading-relaxed" placeholder="• Salario esperado: $2,500 USD&#10;• Entrevista técnica: Repasar estructuras de datos&#10;• Siguiente paso: Me llamarán el jueves..."></textarea>
+              <textarea [ngModel]="selectedApp()?.notes" (ngModelChange)="updateAppField('notes', $event)" rows="15" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md py-3 px-4 border resize-none flex-1 leading-relaxed" placeholder="• Salario esperado: $2,500 USD&#10;• Entrevista técnica: Repasar estructuras de datos&#10;• Siguiente paso: Me llamarán el jueves..."></textarea>
             </div>
 
             <!-- Tab Content: AI Assistant -->

@@ -458,17 +458,22 @@ export class ApplicationsComponent implements OnInit {
   saveNotes() {
     const app = this.selectedApp();
 
-    const payload = {
-      notes: app.notes,
-      contactName: app.contactName,
-      contactEmail: app.contactEmail,
-      contactLinkedin: app.contactLinkedin
-    };
+    const payload: any = {};
+    if (app.notes !== undefined) payload.notes = app.notes;
+    if (app.contactName !== undefined) payload.contactName = app.contactName;
+    if (app.contactEmail !== undefined) payload.contactEmail = app.contactEmail;
+    if (app.contactLinkedin !== undefined) payload.contactLinkedin = app.contactLinkedin;
 
     // Guardar Notas y Contactos
     this.http.patch(`${environment.apiUrl}/applications/${app.id}/notes`, payload).subscribe({
-      next: () => this.updateLocalApp(app.id, payload),
-      error: () => this.updateLocalApp(app.id, payload)
+      next: () => {
+        this.updateLocalApp(app.id, payload);
+        this.toastService.success('Notas guardadas exitosamente');
+      },
+      error: () => {
+        this.updateLocalApp(app.id, payload);
+        this.toastService.success('Notas guardadas (simulado)');
+      }
     });
 
     // Si hay entrevista, guardar datos de entrevista
@@ -612,6 +617,10 @@ export class ApplicationsComponent implements OnInit {
 
       this.toastService.info('Documento descargado correctamente');
     }, 1000);
+  }
+
+  updateAppField(field: string, value: any) {
+    this.selectedApp.update(app => app ? { ...app, [field]: value } : null);
   }
 
   private updateLocalApp(id: string, partial: any) {
