@@ -78,11 +78,11 @@ export class DashboardComponent implements OnInit {
         this.stats.set(d);
         this.renderChart(d);
       },
-      error: () => {
-        // Fallback mock stats
-        const mockStats = { sent: 15, interviewing: 4, offers: 2, rejected: 8, withdrawn: 1 };
-        this.stats.set(mockStats);
-        this.renderChart(mockStats);
+      error: (err) => {
+        console.error('Error al cargar stats', err);
+        const emptyStats = { sent: 0, interviewing: 0, offers: 0, rejected: 0, withdrawn: 0 };
+        this.stats.set(emptyStats);
+        this.renderChart(emptyStats);
       }
     });
   }
@@ -140,13 +140,9 @@ export class DashboardComponent implements OnInit {
       next: (data) => {
         this.upcomingInterviews.set(data || []);
       },
-      error: () => {
-        // Mock data
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        this.upcomingInterviews.set([
-          { id: '2', offer: { title: 'Fullstack Engineer', company: 'BigCorp' }, interviewDate: tomorrow.toISOString() }
-        ]);
+      error: (err) => {
+        console.error('Error al cargar entrevistas', err);
+        this.upcomingInterviews.set([]);
       }
     });
   }
@@ -208,8 +204,9 @@ export class DashboardComponent implements OnInit {
       next: () => {
         this.applyingOffer.set(item);
       },
-      error: () => {
-        this.applyingOffer.set(item); // mock
+      error: (err) => {
+        console.error('Error al aplicar', err);
+        alert('Error al postularse a esta oferta.');
       }
     });
   }

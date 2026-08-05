@@ -168,14 +168,11 @@ export class ApplicationsComponent implements OnInit {
         this.applications.set(res || []);
         this.updateBoard();
       },
-      error: () => {
-        // Mock data
-        this.applications.set([
-          { id: '1', status: 'SENT', updatedAt: new Date().toISOString(), offer: { title: 'Backend Dev', company: 'Startup Inc' } },
-          { id: '2', status: 'INTERVIEW', updatedAt: new Date().toISOString(), offer: { title: 'Fullstack Engineer', company: 'BigCorp' } },
-          { id: '3', status: 'OFFER', updatedAt: new Date().toISOString(), offer: { title: 'Senior Developer', company: 'Tech Giants' }, notes: 'Ofrecen $5000' },
-        ]);
+      error: (err) => {
+        console.error('Error al cargar postulaciones', err);
+        this.applications.set([]);
         this.updateBoard();
+        this.toastService.error('Error al cargar las postulaciones');
       }
     });
   }
@@ -250,19 +247,10 @@ export class ApplicationsComponent implements OnInit {
         }
         this.extractingUrl.set(false);
       },
-      error: () => {
-        // Mock extraction
-        setTimeout(() => {
-          if (this.manualForm.url.includes('linkedin')) {
-            this.manualForm.title = 'Software Engineer (Extracted)';
-            this.manualForm.company = 'LinkedIn Corp';
-          } else {
-            this.manualForm.title = 'Frontend Developer (Extracted)';
-            this.manualForm.company = 'Tech Company';
-          }
-          this.extractingUrl.set(false);
-          this.toastService.success('Datos extraídos exitosamente (simulado)');
-        }, 1500);
+      error: (err) => {
+        console.error('Error al extraer datos', err);
+        this.extractingUrl.set(false);
+        this.toastService.error('Error al extraer datos de la URL');
       }
     });
   }
@@ -277,17 +265,9 @@ export class ApplicationsComponent implements OnInit {
         this.toastService.success('Postulación guardada exitosamente');
         this.closeManualModal();
       },
-      error: () => {
-        const newApp = {
-          id: Math.random().toString(),
-          status: this.manualForm.status,
-          updatedAt: new Date().toISOString(),
-          offer: { title: this.manualForm.title, company: this.manualForm.company, location: this.manualForm.location, url: this.manualForm.url }
-        };
-        this.applications.update(apps => [...apps, newApp]);
-        this.updateBoard();
-        this.toastService.success('Postulación manual añadida (simulado)');
-        this.closeManualModal();
+      error: (err) => {
+        console.error('Error al crear postulación', err);
+        this.toastService.error('Error al guardar la postulación');
       }
     });
   }
@@ -494,31 +474,16 @@ export class ApplicationsComponent implements OnInit {
     if (!app) return;
 
     if (confirm('¿Estás seguro de que deseas eliminar esta postulación?')) {
-      // Optimizamos mostrando el Toast con acción de Deshacer
-      const oldApps = [...this.applications()];
-
       this.http.delete(`${environment.apiUrl}/applications/${app.id}`).subscribe({
         next: () => {
           this.applications.update(apps => apps.filter(a => a.id !== app.id));
           this.updateBoard();
           this.closeDetails();
-          this.toastService.showWithAction('Postulación eliminada', 'Deshacer', () => {
-            this.applications.set(oldApps);
-            this.updateBoard();
-            // A real app would send a POST to restore it on the backend here
-            this.toastService.success('Postulación restaurada');
-          }, 'info', 6000);
+          this.toastService.success('Postulación eliminada exitosamente');
         },
-        error: () => {
-          // Mock delete
-          this.applications.update(apps => apps.filter(a => a.id !== app.id));
-          this.updateBoard();
-          this.closeDetails();
-          this.toastService.showWithAction('Postulación eliminada (simulado)', 'Deshacer', () => {
-            this.applications.set(oldApps);
-            this.updateBoard();
-            this.toastService.success('Postulación restaurada');
-          }, 'info', 6000);
+        error: (err) => {
+          console.error('Error al eliminar', err);
+          this.toastService.error('Error al eliminar la postulación');
         }
       });
     }

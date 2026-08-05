@@ -535,10 +535,10 @@ Intereses: ${profile.hobbies ? profile.hobbies.join(', ') : ''}
           this.loading.set(false);
           this.toastService.success('Perfil guardado exitosamente');
         },
-        error: () => {
+        error: (err) => {
+          console.error('Error al guardar perfil', err);
           this.loading.set(false);
-          // Assuming backend might not be reachable right now, mock success
-          this.toastService.success('Simulando guardado (Backend no responde). ¡Perfil actualizado!');
+          this.toastService.error('Error al guardar el perfil en el servidor');
         }
       });
     }

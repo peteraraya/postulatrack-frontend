@@ -53,14 +53,13 @@ export class JobOffersComponent implements OnInit {
       next: (res) => {
         let newData = Array.isArray(res) ? res : (res?.data || []);
 
-        // Simular persistencia de favoritos si el backend aún no envía 'isFavorite'
-        const savedFavs = JSON.parse(localStorage.getItem('mock_favs') || '[]');
+        // Asignamos isFavorite directamente desde backend
         newData = newData.map((o: any) => ({
           ...o,
-          isFavorite: o.isFavorite !== undefined ? o.isFavorite : savedFavs.includes(o.id)
+          isFavorite: !!o.isFavorite
         }));
 
-        // Simular filtro local si el backend aún no soporta ?favorites=true
+        // Simular filtro local si el backend aún no soporta ?favorites=true completamente
         if (this.showFavoritesOnly) {
           newData = newData.filter((o: any) => o.isFavorite);
         }
@@ -75,11 +74,10 @@ export class JobOffersComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => {
-        // Mock data
-        const savedFavs = JSON.parse(localStorage.getItem('mock_favs') || '[]');
+        // Mock data fallback
         let mocks = [
-          { id: '1', title: 'Frontend Developer', company: 'Google', isRemote: true, skills: ['Angular', 'TypeScript'], isFavorite: savedFavs.includes('1') },
-          { id: '2', title: 'Backend Engineer', company: 'Amazon', location: 'Santiago', skills: ['NestJS', 'Node.js'], isFavorite: savedFavs.includes('2') }
+          { id: '1', title: 'Frontend Developer', company: 'Google', isRemote: true, skills: ['Angular', 'TypeScript'], isFavorite: false },
+          { id: '2', title: 'Backend Engineer', company: 'Amazon', location: 'Santiago', skills: ['NestJS', 'Node.js'], isFavorite: false }
         ];
 
         if (this.showFavoritesOnly) {
@@ -146,27 +144,26 @@ export class JobOffersComponent implements OnInit {
   }
 
   toggleFavorite(offer: any) {
+    const originalState = offer.isFavorite;
     offer.isFavorite = !offer.isFavorite;
     this.offers.update(apps => [...apps]);
-
-    let savedFavs = JSON.parse(localStorage.getItem('mock_favs') || '[]');
-    if (offer.isFavorite) {
-      if (!savedFavs.includes(offer.id)) savedFavs.push(offer.id);
-    } else {
-      savedFavs = savedFavs.filter((id: string) => id !== offer.id);
-    }
-    localStorage.setItem('mock_favs', JSON.stringify(savedFavs));
 
     if (offer.isFavorite) {
       this.http.post(`${environment.apiUrl}/job-offers/${offer.id}/favorite`, {}).subscribe({
         error: () => {
-          console.log('Mock: Favorito agregado (backend no listo)');
+          // Revert on error
+          offer.isFavorite = originalState;
+          this.offers.update(apps => [...apps]);
+          this.toastService.error('Error al agregar a favoritos');
         }
       });
     } else {
       this.http.delete(`${environment.apiUrl}/job-offers/${offer.id}/favorite`).subscribe({
         error: () => {
-          console.log('Mock: Favorito eliminado (backend no listo)');
+          // Revert on error
+          offer.isFavorite = originalState;
+          this.offers.update(apps => [...apps]);
+          this.toastService.error('Error al quitar de favoritos');
         }
       });
     }
