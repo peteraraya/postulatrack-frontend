@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { ToastService } from '../../core/services/toast.service';
@@ -7,7 +8,7 @@ import { ToastService } from '../../core/services/toast.service';
 @Component({
   selector: 'app-interview-prep',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './interview-prep.component.html'
 })
@@ -16,6 +17,7 @@ export class InterviewPrepComponent implements OnInit {
   private toastService = inject(ToastService);
 
   loading = signal(false);
+  evaluatingAnswer = signal(false);
   questions = signal<any[]>([]);
   copiedIndex = signal<number | null>(null);
 
@@ -25,56 +27,56 @@ export class InterviewPrepComponent implements OnInit {
 
   generateGeneralPrep() {
     this.loading.set(true);
-    this.http.get<any>(`${environment.apiUrl}/ai/general-interview-prep`).subscribe({
-      next: (res) => {
-        this.questions.set(res.qna || []);
-        this.loading.set(false);
-      },
-      error: () => {
-        if (!environment.geminiApiKey) {
-          this.toastService.error('Falta configurar Gemini API Key en environment.ts');
-          this.loading.set(false);
-          return;
-        }
 
-        this.http.get<any>(`${environment.apiUrl}/profile`).subscribe({
-          next: (profile) => {
-            const userSkills = profile?.skills ? profile.skills.join(', ') : 'Habilidades generales';
-            const userHeadline = profile?.headline || 'Profesional';
+    if (!environment.geminiApiKey) {
+      this.toastService.error('Falta configurar Gemini API Key en environment.ts');
+      this.loading.set(false);
+      return;
+    }
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
-            const payload = {
-              contents: [{
-                parts: [{ text: `Eres un preparador de entrevistas experto. El candidato tiene este titular: "${userHeadline}" y estas habilidades: "${userSkills}". Genera 4 preguntas de entrevista muy probables de forma general para su perfil. Para cada pregunta, da un consejo breve y una respuesta ideal sugerida basada en su perfil. Devuelve la respuesta ESTRICTAMENTE en formato JSON plano (sin usar bloques de código ni markdown) como un arreglo de objetos con esta estructura: [{ "question": "...", "advice": "...", "answer": "..." }].` }]
-              }]
-            };
+    this.http.get<any>(`${environment.apiUrl}/profile`).subscribe({
+      next: (profile) => {
+        const userSkills = profile?.skills ? profile.skills.join(', ') : 'Habilidades generales';
+        const userHeadline = profile?.headline || 'Profesional';
 
-            this.http.post<any>(url, payload).subscribe({
-              next: (res) => {
-                try {
-                  const rawText = res.candidates[0].content.parts[0].text;
-                  const jsonText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-                  const parsedData = JSON.parse(jsonText);
-                  this.questions.set(parsedData);
-                } catch (e) {
-                  console.error('Error parsing Gemini prep', e);
-                  this.toastService.error('Error interpretando la respuesta de la IA.');
-                } finally {
-                  this.loading.set(false);
-                }
-              },
-              error: (err) => {
-                console.error('Error con Gemini API:', err);
-                this.toastService.error('Error de conexión con Gemini.');
-                this.loading.set(false);
-              }
-            });
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
+        const payload = {
+          contents: [{
+            parts: [{ text: `Eres un preparador de entrevistas experto del año 2026. El candidato tiene este titular: "${userHeadline}" y estas habilidades: "${userSkills}".
+Genera 5 preguntas de entrevista desafiantes, modernas y muy probables para su perfil.
+Asegúrate de incluir obligatoriamente:
+1. Una pregunta sobre proyectos reales en los que ha trabajado y cómo aplicó sus conocimientos en la práctica.
+2. Una pregunta situacional enfocada en su nivel de inglés o cómo se comunicaría en un entorno internacional/bilingüe.
+3. Tres preguntas adicionales clásicas o modernas de resolución de problemas/habilidades blandas adaptadas a su rol.
+
+Para cada pregunta, da un consejo breve y una respuesta ideal sugerida basada en su perfil. Devuelve la respuesta ESTRICTAMENTE en formato JSON plano (sin usar bloques de código ni markdown) como un arreglo de objetos con esta estructura: [{ "question": "...", "advice": "...", "answer": "..." }].` }]
+          }]
+        };
+
+        this.http.post<any>(url, payload).subscribe({
+          next: (res) => {
+            try {
+              const rawText = res.candidates[0].content.parts[0].text;
+              const jsonText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+              const parsedData = JSON.parse(jsonText);
+              this.questions.set(parsedData);
+            } catch (e) {
+              console.error('Error parsing Gemini prep', e);
+              this.toastService.error('Error interpretando la respuesta de la IA.');
+            } finally {
+              this.loading.set(false);
+            }
           },
-          error: () => {
-            this.toastService.error('No se pudo obtener el perfil del usuario.');
+          error: (err) => {
+            console.error('Error con Gemini API:', err);
+            this.toastService.error('Error de conexión con Gemini.');
             this.loading.set(false);
           }
         });
+      },
+      error: () => {
+        this.toastService.error('No se pudo obtener el perfil del usuario.');
+        this.loading.set(false);
       }
     });
   }
@@ -84,5 +86,76 @@ export class InterviewPrepComponent implements OnInit {
     this.copiedIndex.set(index);
     setTimeout(() => this.copiedIndex.set(null), 2000);
     this.toastService.success('Respuesta copiada al portapapeles');
+  }
+
+  evaluateAnswer(index: number) {
+    const qna = this.questions()[index];
+    if (!qna.userAnswer || qna.userAnswer.trim().length < 10) {
+      this.toastService.error('Escribe una respuesta un poco más larga para poder evaluarla.');
+      return;
+    }
+
+    if (!environment.geminiApiKey) {
+      this.toastService.error('Falta configurar Gemini API Key en environment.ts');
+      return;
+    }
+
+    this.evaluatingAnswer.set(true);
+    const currentQuestions = [...this.questions()];
+    currentQuestions[index] = { ...currentQuestions[index], evaluating: true };
+    this.questions.set(currentQuestions);
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
+    const payload = {
+      contents: [{
+        parts: [{
+          text: `Actúa como un reclutador experto. Te haré una evaluación de una respuesta a una entrevista.
+Pregunta: "${qna.question}"
+Respuesta del candidato: "${qna.userAnswer}"
+
+Evalúa la respuesta del candidato. Dame tu respuesta ESTRICTAMENTE en formato JSON plano (sin markdown) con la siguiente estructura:
+{
+  "score": número del 1 al 10,
+  "feedback": "Texto con tu opinión sobre lo que hizo bien y lo que debe mejorar de forma constructiva y profesional."
+}`
+        }]
+      }]
+    };
+
+    this.http.post<any>(url, payload).subscribe({
+      next: (res) => {
+        try {
+          const rawText = res.candidates[0].content.parts[0].text;
+          const jsonText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+          const parsedData = JSON.parse(jsonText);
+
+          const updated = [...this.questions()];
+          updated[index] = {
+            ...updated[index],
+            evaluating: false,
+            score: parsedData.score,
+            feedback: parsedData.feedback
+          };
+          this.questions.set(updated);
+          this.toastService.success('¡Respuesta evaluada!');
+        } catch (e) {
+          console.error('Error parsing Gemini evaluation', e);
+          this.toastService.error('Error al interpretar la evaluación.');
+          const updated = [...this.questions()];
+          updated[index].evaluating = false;
+          this.questions.set(updated);
+        } finally {
+          this.evaluatingAnswer.set(false);
+        }
+      },
+      error: (err) => {
+        console.error('Error Gemini evaluation:', err);
+        this.toastService.error('Error de conexión al evaluar.');
+        const updated = [...this.questions()];
+        updated[index].evaluating = false;
+        this.questions.set(updated);
+        this.evaluatingAnswer.set(false);
+      }
+    });
   }
 }

@@ -449,67 +449,42 @@ export class ProfileComponent implements OnInit {
     return finalUrl;
   }
 
+  isGeneratingCV = signal(false);
+
   generateMyCV() {
     const profile = this.profileForm.value as any;
     const userName = (profile.firstName || profile.lastName)
       ? `${profile.firstName} ${profile.lastName}`.trim()
       : (this.userInfo?.name || 'Candidato');
 
-    let exps = 'Sin experiencia registrada.';
-    if (profile.workExperiences && profile.workExperiences.length > 0) {
-      exps = profile.workExperiences.map((exp: any) =>
-        `Cargo: ${exp.role || 'No especificado'}\nEmpresa: ${exp.company || 'No especificada'}\nPeríodo: ${exp.startDate || '?'} a ${exp.endDate || 'Presente'}\nDescripción:\n${exp.description || 'Sin descripción'}`
-      ).join('\n\n---------------------------\n\n');
-    }
+    this.isGeneratingCV.set(true);
+    this.toastService.info('Generando PDF, por favor espera...');
 
-    const cvText = `=========================================================
-CURRÍCULUM VITAE BASE
-Generado por PostulaTrack
+    this.http.get(`${environment.apiUrl}/profile/export/pdf`, {
+      responseType: 'blob'
+    }).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `CV_${userName.replace(/\s+/g, '_')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
 
-DATOS PERSONALES
-----------------
-Nombre: ${userName}
-Correo: ${profile.email || ''}
-Teléfono: ${profile.phone || ''}
-Ubicación: ${profile.location || ''}
-Disponibilidad: ${profile.availability || ''}
-
-ENLACES
--------
-LinkedIn: ${profile.linkedinUrl || ''}
-GitHub: ${profile.githubUrl || ''}
-Portafolio: ${profile.portfolioUrl || ''}
-
-PERFIL PROFESIONAL
-------------------
-Titular: ${profile.headline || ''}
-Nivel: ${profile.experienceLevel || ''}
-
-Resumen:
-${profile.summary || ''}
-
-EXPERIENCIA LABORAL
--------------------
-${exps}
-
-HABILIDADES E IDIOMAS
----------------------
-Habilidades Técnicas: ${profile.skills ? profile.skills.join(', ') : ''}
-Idiomas: ${profile.languages ? profile.languages.join(', ') : ''}
-Intereses: ${profile.hobbies ? profile.hobbies.join(', ') : ''}
-`;
-
-    const blob = new Blob([cvText], { type: 'text/plain;charset=utf-8' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `CV_Base_${userName.replace(/\s+/g, '_')}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-
-    this.toastService.success('¡Tu CV base ha sido generado y descargado!');
+        this.isGeneratingCV.set(false);
+        this.toastService.success('¡Tu CV en PDF ha sido generado y descargado!');
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Error descargando el CV:', err);
+        this.isGeneratingCV.set(false);
+        this.toastService.error('Error al generar el PDF del CV.');
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   saveProfile() {

@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
@@ -25,12 +25,27 @@ export class ShellComponent {
   userInfo: any = this.authService.getUserInfo() || {};
   skillInput = '';
   isMobileMenuOpen = false;
+  isProfileComplete = true; // Por defecto true para no bloquear mientras carga
+
+  private router = inject(Router);
 
   constructor() {
     // Attempt to enrich userInfo from backend if token payload is missing details
     this.http.get<any>(`${environment.apiUrl}/profile`).subscribe({
       next: (profile) => {
         if (profile) {
+          const hasName = !!(profile.firstName && profile.firstName.trim().length > 0) || !!(profile.user?.name);
+          // Consideramos completo si tiene firstName guardado. Si no, false.
+          // Wait, si el login con Google da nombre, profile.user.name existe?
+          // Para forzar que completen en la vista perfil, revisamos profile.firstName directamente.
+          const isComplete = !!(profile.firstName && profile.firstName.trim().length > 0);
+          this.isProfileComplete = isComplete;
+
+          if (!isComplete && this.router.url !== '/profile') {
+            this.router.navigate(['/profile']);
+            this.toastService.info('Para usar la app, debes completar tu nombre en el perfil.');
+          }
+
           if (profile.user) {
             this.userInfo = { ...this.userInfo, ...profile.user };
           } else if (profile.name || profile.picture) {
@@ -40,9 +55,21 @@ export class ShellComponent {
               picture: profile.picture || this.userInfo.picture
             };
           }
+        } else {
+          // Si el perfil es null, entonces tampoco está completo.
+          this.isProfileComplete = false;
+          if (this.router.url !== '/profile') {
+            this.router.navigate(['/profile']);
+            this.toastService.info('Para usar la app, debes completar tu nombre en el perfil.');
+          }
         }
       },
-      error: () => {}
+      error: () => {
+        this.isProfileComplete = false;
+        if (this.router.url !== '/profile') {
+          this.router.navigate(['/profile']);
+        }
+      }
     });
   }
 
