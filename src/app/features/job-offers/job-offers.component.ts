@@ -1,10 +1,12 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, effect, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { FormsModule } from '@angular/forms';
 import { FilterService } from '../../core/services/filter.service';
 import { ToastService } from '../../core/services/toast.service';
+import { AiService } from '../../core/services/ai.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-job-offers',
@@ -13,10 +15,13 @@ import { ToastService } from '../../core/services/toast.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './job-offers.component.html'
 })
-export class JobOffersComponent implements OnInit {
+export class JobOffersComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   public filterService = inject(FilterService);
   private toastService = inject(ToastService);
+  private aiService = inject(AiService);
+
+  private aiSubscription?: Subscription;
 
   offers = signal<any[]>([]);
   loading = signal(true);
@@ -33,6 +38,21 @@ export class JobOffersComponent implements OnInit {
         this.loadOffers(true);
       }
     });
+  }
+
+  ngOnDestroy() {
+    if (this.aiSubscription) {
+      this.aiSubscription.unsubscribe();
+    }
+  }
+
+  cancelAiTask() {
+    if (this.aiSubscription) {
+      this.aiSubscription.unsubscribe();
+      this.aiSubscription = undefined;
+    }
+    this.analyzingOffer.set(null);
+    this.toastService.info('Operación IA cancelada');
   }
 
   ngOnInit() {
@@ -200,16 +220,11 @@ export class JobOffersComponent implements OnInit {
             const userSkills = profile?.skills ? profile.skills.join(', ') : 'Habilidades generales';
             const userHeadline = profile?.headline || 'Profesional';
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
-            const payload = {
-              contents: [{
-                parts: [{ text: `Actúa como un reclutador experto. El candidato tiene este titular: "${userHeadline}" y estas habilidades: "${userSkills}". La oferta es para el puesto de "${offerTitle}" en la empresa "${offerCompany}". Escribe un párrafo muy breve y directo (máximo 3 líneas) indicando por qué hace buen match y qué 1 concepto clave debería estudiar o repasar para la entrevista. No uses formato markdown de bloques.` }]
-              }]
-            };
+            const promptText = `Actúa como un reclutador experto. El candidato tiene este titular: "${userHeadline}" y estas habilidades: "${userSkills}". La oferta es para el puesto de "${offerTitle}" en la empresa "${offerCompany}". Escribe un párrafo muy breve y directo (máximo 3 líneas) indicando por qué hace buen match y qué 1 concepto clave debería estudiar o repasar para la entrevista. No uses formato markdown de bloques.`;
 
-            this.http.post<any>(url, payload).subscribe({
-              next: (res) => {
-                const analysis = res.candidates[0].content.parts[0].text;
+            if (this.aiSubscription) this.aiSubscription.unsubscribe();
+            this.aiSubscription = this.aiService.generateContent(promptText).subscribe({
+              next: (analysis) => {
                 this.aiAnalysisResult.update(prev => ({ ...prev, [offer.id]: analysis }));
                 this.analyzingOffer.set(null);
               },

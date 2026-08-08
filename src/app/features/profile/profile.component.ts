@@ -7,6 +7,8 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { FlatpickrDirective } from '../../shared/directives/flatpickr.directive';
+import { AiService } from '../../core/services/ai.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-profile',
@@ -22,6 +24,9 @@ export class ProfileComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private sanitizer = inject(DomSanitizer);
   private toastService = inject(ToastService);
+  private aiService = inject(AiService);
+
+  private aiSubscription?: Subscription;
 
   loading = signal(false);
   userInfo = this.authService.getUserInfo();
@@ -191,6 +196,21 @@ export class ProfileComponent implements OnInit {
     }
   }
 
+  ngOnDestroy() {
+    if (this.aiSubscription) {
+      this.aiSubscription.unsubscribe();
+    }
+  }
+
+  cancelAiTask() {
+    if (this.aiSubscription) {
+      this.aiSubscription.unsubscribe();
+      this.aiSubscription = undefined;
+    }
+    this.isExtractingCV.set(false);
+    this.toastService.info('Operación IA cancelada');
+  }
+
   ngOnInit() {
     this.http.get<any>(`${environment.apiUrl}/profile`).subscribe({
       next: (profile) => {
@@ -325,16 +345,23 @@ export class ProfileComponent implements OnInit {
       return;
     }
 
-    if (!environment.geminiApiKey) {
-      this.toastService.error('Falta configurar Gemini API Key en environment.ts');
-      return;
-    }
-
     this.isExtractingCV.set(true);
     this.toastService.info('Analizando tu CV con Gemini 1.5 Flash...', 2000);
 
     const processBase64 = (base64Data: string) => {
+      // Para Gemini que acepta base64:
+      // Como Groq no soporta extracción directa de PDF por base64 (a menos que usemos OCR/vision),
+      // Para la extracción de CV vamos a seguir usando solo Gemini o lanzar error si falla.
+      // Modificamos el ai.service para soportar payloads mixtos o hacemos la llamada aquí directo.
+
+      // Mantenemos la llamada directa a Gemini aquí porque la API de Groq no soporta PDF mimeType base64
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
+
+      if (!environment.geminiApiKey) {
+        this.toastService.error('Falta configurar Gemini API Key en environment.ts');
+        this.isExtractingCV.set(false);
+        return;
+      }
 
       const payload = {
         contents: [{
@@ -345,7 +372,8 @@ export class ProfileComponent implements OnInit {
         }]
       };
 
-      this.http.post<any>(url, payload).subscribe({
+      if (this.aiSubscription) this.aiSubscription.unsubscribe();
+      this.aiSubscription = this.http.post<any>(url, payload).subscribe({
         next: (res) => {
           try {
             const rawText = res.candidates[0].content.parts[0].text;

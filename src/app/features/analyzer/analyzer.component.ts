@@ -1,9 +1,11 @@
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { ToastService } from '../../core/services/toast.service';
+import { AiService } from '../../core/services/ai.service';
+import { Subscription } from 'rxjs';
 
 export interface JobAnalysis {
   compatibilityScore: number;
@@ -26,12 +28,30 @@ export interface JobAnalysis {
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './analyzer.component.html'
 })
-export class AnalyzerComponent {
+export class AnalyzerComponent implements OnDestroy {
   private http = inject(HttpClient);
   private toastService = inject(ToastService);
+  private aiService = inject(AiService);
+
+  private aiSubscription?: Subscription;
 
   jobDescription = signal('');
   isAnalyzing = signal(false);
+
+  ngOnDestroy() {
+    if (this.aiSubscription) {
+      this.aiSubscription.unsubscribe();
+    }
+  }
+
+  cancelAiTask() {
+    if (this.aiSubscription) {
+      this.aiSubscription.unsubscribe();
+      this.aiSubscription = undefined;
+    }
+    this.isAnalyzing.set(false);
+    this.toastService.info('Operación IA cancelada');
+  }
   result = signal<JobAnalysis | null>(null);
 
   // Intentamos obtener el perfil del usuario para cruzar datos
@@ -46,11 +66,6 @@ export class AnalyzerComponent {
 
   handleAnalyze() {
     if (!this.jobDescription().trim()) return;
-
-    if (!environment.geminiApiKey) {
-      this.toastService.error('Falta configurar Gemini API Key en environment.ts');
-      return;
-    }
 
     this.isAnalyzing.set(true);
     this.result.set(null);
@@ -99,14 +114,10 @@ export class AnalyzerComponent {
       }
     `;
 
-    const payload = {
-      contents: [{ parts: [{ text: prompt }] }]
-    };
-
-    this.http.post<any>(url, payload).subscribe({
-      next: (res) => {
+    if (this.aiSubscription) this.aiSubscription.unsubscribe();
+    this.aiSubscription = this.aiService.generateContent(prompt, true).subscribe({
+      next: (rawText) => {
         try {
-          const rawText = res.candidates[0].content.parts[0].text;
           const jsonText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
           const parsedData = JSON.parse(jsonText);
 

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
@@ -7,6 +7,9 @@ import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from 
 import { driver } from 'driver.js';
 import { ToastService } from '../../core/services/toast.service';
 import { FlatpickrDirective } from '../../shared/directives/flatpickr.directive';
+import { AiService } from '../../core/services/ai.service';
+import { jsPDF } from 'jspdf';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-applications',
@@ -15,10 +18,13 @@ import { FlatpickrDirective } from '../../shared/directives/flatpickr.directive'
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './applications.component.html'
 })
-export class ApplicationsComponent implements OnInit {
+export class ApplicationsComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
   private toastService = inject(ToastService);
+  private aiService = inject(AiService);
+
+  private aiSubscription?: Subscription;
 
   applications = signal<any[]>([]);
   showManualModal = signal(false);
@@ -101,6 +107,24 @@ export class ApplicationsComponent implements OnInit {
     this.loadApplications();
     this.initOnboarding();
     this.loadUserProfile();
+  }
+
+  ngOnDestroy() {
+    if (this.aiSubscription) {
+      this.aiSubscription.unsubscribe();
+    }
+  }
+
+  cancelAiTask() {
+    if (this.aiSubscription) {
+      this.aiSubscription.unsubscribe();
+      this.aiSubscription = undefined;
+    }
+    this.generatingMessage.set(false);
+    this.translatingMessage.set(false);
+    this.adaptingCV.set(false);
+    this.generatingInterview.set(false);
+    this.toastService.info('Operación IA cancelada');
   }
 
   loadUserProfile() {
@@ -289,7 +313,8 @@ export class ApplicationsComponent implements OnInit {
     if (!app) return;
 
     this.generatingMessage.set(true);
-    this.http.post<any>(`${environment.apiUrl}/ai/generate-message`, { applicationId: app.id }).subscribe({
+    if (this.aiSubscription) this.aiSubscription.unsubscribe();
+    this.aiSubscription = this.http.post<any>(`${environment.apiUrl}/ai/generate-message`, { applicationId: app.id }).subscribe({
       next: (res) => {
         this.generatedMessage.set(res.message);
         this.generatingMessage.set(false);
@@ -306,16 +331,11 @@ export class ApplicationsComponent implements OnInit {
         const profile = this.userProfile() || {};
         const userName = profile.firstName ? `${profile.firstName} ${profile.lastName}` : 'Candidato';
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
-        const payload = {
-          contents: [{
-            parts: [{ text: `Escribe un mensaje de introducción profesional (Cover Letter corta de 2 párrafos) para que el candidato "${userName}" postule al cargo de "${offerTitle}" en la empresa "${offerCompany}". No uses formato markdown de bloques.` }]
-          }]
-        };
+        const promptText = `Escribe un mensaje de introducción profesional (Cover Letter corta de 2 párrafos) para que el candidato "${userName}" postule al cargo de "${offerTitle}" en la empresa "${offerCompany}". No uses formato markdown de bloques.`;
 
-        this.http.post<any>(url, payload).subscribe({
-          next: (res) => {
-            const message = res.candidates[0].content.parts[0].text;
+        if (this.aiSubscription) this.aiSubscription.unsubscribe();
+        this.aiSubscription = this.aiService.generateContent(promptText).subscribe({
+          next: (message) => {
             this.generatedMessage.set(message.trim());
             this.generatingMessage.set(false);
           },
@@ -340,7 +360,8 @@ export class ApplicationsComponent implements OnInit {
     if (!currentMsg) return;
 
     this.translatingMessage.set(true);
-    this.http.post<any>(`${environment.apiUrl}/ai/translate`, { text: currentMsg, targetLanguage: 'en' }).subscribe({
+    if (this.aiSubscription) this.aiSubscription.unsubscribe();
+    this.aiSubscription = this.http.post<any>(`${environment.apiUrl}/ai/translate`, { text: currentMsg, targetLanguage: 'en' }).subscribe({
       next: (res) => {
         this.generatedMessage.set(res.translatedText);
         this.translatingMessage.set(false);
@@ -352,16 +373,11 @@ export class ApplicationsComponent implements OnInit {
           return;
         }
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
-        const payload = {
-          contents: [{
-            parts: [{ text: `Traduce el siguiente texto al inglés profesional, manteniendo el tono formal pero entusiasta:\n\n${currentMsg}` }]
-          }]
-        };
+        const promptText = `Traduce el siguiente texto al inglés profesional, manteniendo el tono formal pero entusiasta:\n\n${currentMsg}`;
 
-        this.http.post<any>(url, payload).subscribe({
-          next: (res) => {
-            const translation = res.candidates[0].content.parts[0].text;
+        if (this.aiSubscription) this.aiSubscription.unsubscribe();
+        this.aiSubscription = this.aiService.generateContent(promptText).subscribe({
+          next: (translation) => {
             this.generatedMessage.set(translation.trim());
             this.translatingMessage.set(false);
             this.toastService.success('Mensaje traducido al inglés por IA');
@@ -387,7 +403,8 @@ export class ApplicationsComponent implements OnInit {
     if (!app) return;
 
     this.generatingInterview.set(true);
-    this.http.post<any>(`${environment.apiUrl}/ai/interview-prep`, { applicationId: app.id }).subscribe({
+    if (this.aiSubscription) this.aiSubscription.unsubscribe();
+    this.aiSubscription = this.http.post<any>(`${environment.apiUrl}/ai/interview-prep`, { applicationId: app.id }).subscribe({
       next: (res) => {
         this.interviewPrepResult.set(res.qna);
         this.generatingInterview.set(false);
@@ -404,17 +421,12 @@ export class ApplicationsComponent implements OnInit {
         const profile = this.userProfile() || {};
         const userSkills = profile.skills ? profile.skills.join(', ') : 'Ninguna específica';
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
-        const payload = {
-          contents: [{
-            parts: [{ text: `Eres un preparador de entrevistas experto. El candidato postula a "${offerTitle}" en "${offerCompany}" y tiene las siguientes habilidades: "${userSkills}". Genera 2 preguntas de entrevista muy probables para este cargo. Para cada pregunta, da un consejo breve y una respuesta ideal sugerida basada en su perfil. Devuelve la respuesta ESTRICTAMENTE en formato JSON plano (sin markdown \`\`\`json) como un arreglo de objetos con esta estructura: [{ "question": "...", "advice": "...", "answer": "..." }].` }]
-          }]
-        };
+        const promptText = `Eres un preparador de entrevistas experto. El candidato postula a "${offerTitle}" en "${offerCompany}" y tiene las siguientes habilidades: "${userSkills}". Genera 2 preguntas de entrevista muy probables para este cargo. Para cada pregunta, da un consejo breve y una respuesta ideal sugerida basada en su perfil. Devuelve la respuesta ESTRICTAMENTE en formato JSON plano (sin markdown \`\`\`json) como un arreglo de objetos con esta estructura: [{ "question": "...", "advice": "...", "answer": "..." }].`;
 
-        this.http.post<any>(url, payload).subscribe({
-          next: (res) => {
+        if (this.aiSubscription) this.aiSubscription.unsubscribe();
+        this.aiSubscription = this.aiService.generateContent(promptText, true).subscribe({
+          next: (rawText) => {
             try {
-              const rawText = res.candidates[0].content.parts[0].text;
               const jsonText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
               const parsedData = JSON.parse(jsonText);
               this.interviewPrepResult.set(parsedData);
@@ -512,7 +524,8 @@ export class ApplicationsComponent implements OnInit {
     if (!app) return;
 
     this.adaptingCV.set(true);
-    this.http.post<any>(`${environment.apiUrl}/ai/adapt-cv`, { applicationId: app.id }).subscribe({
+    if (this.aiSubscription) this.aiSubscription.unsubscribe();
+    this.aiSubscription = this.http.post<any>(`${environment.apiUrl}/ai/adapt-cv`, { applicationId: app.id }).subscribe({
       next: (res) => {
         this.adaptedCVResult.set(res.cvText);
         this.adaptingCV.set(false);
@@ -528,23 +541,44 @@ export class ApplicationsComponent implements OnInit {
         const title = app.offer?.title || 'Desarrollador de Software';
         const profile = this.userProfile() || {};
 
-        const userName = profile.user?.name || profile.name || profile.firstName ? `${profile.firstName} ${profile.lastName}` : 'Candidato';
+        const userName = profile.user?.name || profile.name || (profile.firstName ? `${profile.firstName} ${profile.lastName}` : 'Candidato');
         const userHeadline = profile.headline || 'Profesional en Tecnología';
         const userSummary = profile.summary || 'Profesional altamente motivado.';
         const userSkills = profile.skills && profile.skills.length > 0
           ? profile.skills.join(', ')
           : 'Habilidades generales';
+        const userEmail = profile.email || profile.user?.email || 'email@ejemplo.com';
+        const userPhone = profile.phone || 'Teléfono no especificado';
+        const userLocation = profile.location || 'Ubicación no especificada';
+        const userLinkedin = profile.linkedinUrl || '';
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
-        const payload = {
-          contents: [{
-            parts: [{ text: `Actúa como un experto en redacción de CVs. El candidato "${userName}" con titular "${userHeadline}", habilidades "${userSkills}" y resumen "${userSummary}", postula a la oferta de "${title}" en la empresa "${company}". Genera un currículum vitae estructurado y adaptado en texto plano (sin usar bloques de código ni markdown) resaltando cómo su perfil hace match con esa oferta.` }]
-          }]
-        };
+        let exps = '';
+        if (profile.workExperiences && profile.workExperiences.length > 0) {
+          exps = profile.workExperiences.map((exp: any) =>
+            `Cargo: ${exp.role}, Empresa: ${exp.company}, Periodo: ${exp.startDate} - ${exp.endDate}, Desc: ${exp.description}`
+          ).join(' | ');
+        } else {
+          exps = 'Sin experiencia detallada';
+        }
 
-        this.http.post<any>(url, payload).subscribe({
-          next: (res) => {
-            const cvText = res.candidates[0].content.parts[0].text;
+        const promptText = `Actúa como un experto en redacción de CVs.
+El candidato postula a la oferta de "${title}" en la empresa "${company}".
+DATOS DEL CANDIDATO:
+- Nombre: ${userName}
+- Email: ${userEmail}
+- Teléfono: ${userPhone}
+- Ubicación: ${userLocation}
+- LinkedIn: ${userLinkedin}
+- Titular: ${userHeadline}
+- Habilidades: ${userSkills}
+- Resumen original: ${userSummary}
+- Experiencias laborales: ${exps}
+
+Genera un currículum vitae estructurado y adaptado en texto plano (sin usar bloques de código ni markdown, solo texto listo para PDF) resaltando cómo su perfil hace match con la oferta. Usa los datos de contacto proporcionados, NO inventes datos genéricos.`;
+
+        if (this.aiSubscription) this.aiSubscription.unsubscribe();
+        this.aiSubscription = this.aiService.generateContent(promptText).subscribe({
+          next: (cvText) => {
             this.adaptedCVResult.set(cvText);
             this.adaptingCV.set(false);
           },
@@ -558,30 +592,47 @@ export class ApplicationsComponent implements OnInit {
     });
   }
 
+  isDownloadingCV = signal(false);
+
   downloadCV() {
     const cvContent = this.adaptedCVResult();
     if (!cvContent) return;
 
-    this.toastService.success('Preparando tu documento...');
+    this.isDownloadingCV.set(true);
+    this.toastService.info('Generando PDF, por favor espera...');
 
     setTimeout(() => {
-      // Creamos un Blob con el texto generado
-      const blob = new Blob([cvContent], { type: 'text/plain;charset=utf-8' });
-      const url = window.URL.createObjectURL(blob);
+      try {
+        const doc = new jsPDF();
 
-      // Creamos un enlace invisible para forzar la descarga
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `CV_Adaptado_${this.selectedApp()?.offer?.company || 'Empresa'}.txt`;
-      document.body.appendChild(a);
-      a.click();
+        doc.setFont('helvetica');
+        doc.setFontSize(11);
 
-      // Limpiamos
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+        const lines = doc.splitTextToSize(cvContent, 170);
 
-      this.toastService.info('Documento descargado correctamente');
-    }, 1000);
+        let y = 20;
+        for (let i = 0; i < lines.length; i++) {
+          if (y > 280) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.text(lines[i], 20, y);
+          y += 6;
+        }
+
+        const company = this.selectedApp()?.offer?.company?.replace(/\s+/g, '_') || 'Empresa';
+        doc.save(`CV_Adaptado_${company}.pdf`);
+
+        this.isDownloadingCV.set(false);
+        this.toastService.success('Documento PDF descargado correctamente');
+        this.cdr.markForCheck();
+      } catch (err) {
+        console.error('Error generando PDF:', err);
+        this.isDownloadingCV.set(false);
+        this.toastService.error('Error al generar el PDF.');
+        this.cdr.markForCheck();
+      }
+    }, 500);
   }
 
   updateAppField(field: string, value: any) {
