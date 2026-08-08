@@ -75,8 +75,6 @@ export class AnalyzerComponent implements OnDestroy {
     const userHeadline = profile.headline || 'Profesional';
     const userSummary = profile.summary || '';
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
-
     const prompt = `
       Eres un experto evaluador de reclutamiento (ATS y AI analyzer).
       A continuación te entrego el perfil de un candidato y la descripción de una oferta de empleo.

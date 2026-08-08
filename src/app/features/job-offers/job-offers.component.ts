@@ -206,12 +206,6 @@ export class JobOffersComponent implements OnInit, OnDestroy {
         this.analyzingOffer.set(null);
       },
       error: () => {
-        if (!environment.geminiApiKey) {
-          this.toastService.error('Falta configurar Gemini API Key en environment.ts');
-          this.analyzingOffer.set(null);
-          return;
-        }
-
         const offerTitle = offer.title || 'Trabajo';
         const offerCompany = offer.company || 'Empresa';
 

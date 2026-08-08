@@ -346,38 +346,15 @@ export class ProfileComponent implements OnInit {
     }
 
     this.isExtractingCV.set(true);
-    this.toastService.info('Analizando tu CV con Gemini 1.5 Flash...', 2000);
+    this.toastService.info('Analizando tu CV con IA...', 2000);
 
     const processBase64 = (base64Data: string) => {
-      // Para Gemini que acepta base64:
-      // Como Groq no soporta extracción directa de PDF por base64 (a menos que usemos OCR/vision),
-      // Para la extracción de CV vamos a seguir usando solo Gemini o lanzar error si falla.
-      // Modificamos el ai.service para soportar payloads mixtos o hacemos la llamada aquí directo.
-
-      // Mantenemos la llamada directa a Gemini aquí porque la API de Groq no soporta PDF mimeType base64
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${environment.geminiApiKey}`;
-
-      if (!environment.geminiApiKey) {
-        this.toastService.error('Falta configurar Gemini API Key en environment.ts');
-        this.isExtractingCV.set(false);
-        return;
-      }
-
-      const payload = {
-        contents: [{
-          parts: [
-            { text: "Eres un asistente experto en Recursos Humanos. Extrae la siguiente información del currículum adjunto y devuélvela ESTRICTAMENTE en formato JSON válido (sin markdown ni etiquetas ```json, solo el JSON puro). Las propiedades esperadas son:\n- firstName (string)\n- lastName (string)\n- email (string)\n- phone (string)\n- location (string)\n- headline (string)\n- experienceLevel (string, ej. 'Junior', 'Mid', 'Senior')\n- summary (string)\n- skills (array of strings)\n- languages (string)\n- hobbies (string)\n- workExperiences (array of objects con: company, role, startDate, endDate, description)\nSi falta algún dato, déjalo vacío." },
-            { inlineData: { mimeType: "application/pdf", data: base64Data } }
-          ]
-        }]
-      };
+      const promptText = `Eres un asistente experto en Recursos Humanos. Extrae la siguiente información del currículum adjunto y devuélvela ESTRICTAMENTE en formato JSON válido. Las propiedades esperadas son:\n- firstName (string)\n- lastName (string)\n- email (string)\n- phone (string)\n- location (string)\n- headline (string)\n- experienceLevel (string, ej. 'Junior', 'Mid', 'Senior')\n- summary (string)\n- skills (array of strings)\n- languages (string)\n- hobbies (string)\n- workExperiences (array of objects con: company, role, startDate, endDate, description)\nSi falta algún dato, déjalo vacío.`;
 
       if (this.aiSubscription) this.aiSubscription.unsubscribe();
-      this.aiSubscription = this.http.post<any>(url, payload).subscribe({
-        next: (res) => {
+      this.aiSubscription = this.aiService.generateContent(promptText, true, base64Data).subscribe({
+        next: (rawText) => {
           try {
-            const rawText = res.candidates[0].content.parts[0].text;
-            // Limpiar posible markdown inyectado por Gemini
             const jsonText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
             const parsedData = JSON.parse(jsonText);
 
@@ -427,7 +404,7 @@ export class ProfileComponent implements OnInit {
         error: (err) => {
           console.error(err);
           this.isExtractingCV.set(false);
-          this.toastService.error('Error de conexión con Gemini. Verifica tu API Key.');
+          this.cdr.markForCheck();
         }
       });
     };

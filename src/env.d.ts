@@ -2,7 +2,6 @@ declare var process: {
   env: {
     NODE_ENV: string;
     NG_APP_API_URL: string;
-    NG_APP_GEMINI_API_KEY: string;
     [key: string]: string | undefined;
   };
 };
@@ -10,8 +9,6 @@ declare var process: {
 declare interface Env {
   readonly NODE_ENV: string;
   readonly NG_APP_API_URL: string;
-  readonly NG_APP_GEMINI_API_KEY: string;
-  readonly NG_APP_GROQ_API_KEY: string;
   [key: string]: any;
 }
 

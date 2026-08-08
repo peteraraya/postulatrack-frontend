@@ -320,12 +320,6 @@ export class ApplicationsComponent implements OnInit, OnDestroy {
         this.generatingMessage.set(false);
       },
       error: () => {
-        if (!environment.geminiApiKey) {
-          this.toastService.error('Configura la API Key de Gemini en environment.ts');
-          this.generatingMessage.set(false);
-          return;
-        }
-
         const offerTitle = app.offer?.title || app.title || 'Puesto';
         const offerCompany = app.offer?.company || app.company || 'la empresa';
         const profile = this.userProfile() || {};
@@ -367,12 +361,6 @@ export class ApplicationsComponent implements OnInit, OnDestroy {
         this.translatingMessage.set(false);
       },
       error: () => {
-        if (!environment.geminiApiKey) {
-          this.toastService.error('Configura la API Key de Gemini en environment.ts');
-          this.translatingMessage.set(false);
-          return;
-        }
-
         const promptText = `Traduce el siguiente texto al inglés profesional, manteniendo el tono formal pero entusiasta:\n\n${currentMsg}`;
 
         if (this.aiSubscription) this.aiSubscription.unsubscribe();
@@ -410,12 +398,6 @@ export class ApplicationsComponent implements OnInit, OnDestroy {
         this.generatingInterview.set(false);
       },
       error: () => {
-        if (!environment.geminiApiKey) {
-          this.toastService.error('Configura la API Key de Gemini en environment.ts');
-          this.generatingInterview.set(false);
-          return;
-        }
-
         const offerTitle = app.offer?.title || app.title || 'Puesto';
         const offerCompany = app.offer?.company || app.company || 'Empresa';
         const profile = this.userProfile() || {};
@@ -531,12 +513,6 @@ export class ApplicationsComponent implements OnInit, OnDestroy {
         this.adaptingCV.set(false);
       },
       error: () => {
-        if (!environment.geminiApiKey) {
-          this.toastService.error('Configura la API Key de Gemini en environment.ts');
-          this.adaptingCV.set(false);
-          return;
-        }
-
         const company = app.offer?.company || 'la empresa';
         const title = app.offer?.title || 'Desarrollador de Software';
         const profile = this.userProfile() || {};
